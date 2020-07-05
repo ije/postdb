@@ -38,14 +38,14 @@ if err != nil {
 defer db.Close()
 
 // Start a server
-db.ListenAndServe(":8080", nil)
+db.ListenAndServe(":9000", nil)
 ```
 
 as client:
 
 ```go
 // Connect to server
-db, err := postdb.Connect("localhost:8080", nil)
+db, err := postdb.Connect("localhost:9000", nil)
 if err != nil {
   return err
 }
