@@ -5,52 +5,111 @@ A database to store your posts in [golang](https://golang.org) with [bbolt](http
 ## Installing
 ```bash
 go get github.com/postui/postdb
-```
-
-## Requirements
-Need [golang](https://golang.org/dl) 1.14+
+``` 
 
 ## Usage
+as an embedded database:
 ```go
-// Opening a database
-db, err := postdb.Open("post.db", nil)
+// opening a database
+db, err := postdb.Open("post.db", 0666)
 if err != nil {
   return err
 }
 defer db.Close()
 
-db.GetPosts(typeid)
-db.GetPosts(typeid, q.ByCategory("cat"), q.Range(0, 100), q.SortBy("crtime", q.DESC))
-db.GetPost(id)
-db.AddPost(typeid, q.KV{"k": []byte("v")})
-db.UpdatePost(id, q.Index(1), q.Tag("tag"), q.KV{"k": []byte("v")})
-db.RemovePost(id)
+// get typed posts
+db.GetPosts("type")
+// get typed posts with query
+db.GetPosts("type", q.Status(q.DRAFT, q.NORMAL), q.Tag("tag"), q.Range(0, 100), q.SortBy("crtime", q.DESC))
+// get post by id
+db.GetPost("id")
+// add a new post
+db.AddPost("type", q.Tag("tag"), q.KV{"k": []byte("v")})
+// update the existing post
+db.UpdatePost("id", q.Tag("tagA", "tagB"), q.KV{"k": []byte("v")})
+// remove the existing post
+db.RemovePost("id")
+// backup the database
+db.WriteTo(w)
+
+// get the value for a key
+db.GetValue("k")
+// put the value for a key
+db.PutValue("k", []byte("v"))
 ```
 
-as server:
+with namespace:
+```go
+// opening a ns database
+db, err := postdb.New("path")
+if err != nil {
+  return err
+}
+defer db.Close()
+ 
+// use default namespace "public"
+db.GetPosts("type")
+...
+
+// create namespace database
+nsdb := db.Namespace("name")
+// use namespace database
+nsdb.GetPosts("type")
+...
+```
+
+as server of C/S:
 
 ```go
-// Open a database
-db, err := postdb.Open("post.db", nil)
+// Opening a ns database
+db, err := postdb.New("path")
 if err != nil {
   return err
 }
 defer db.Close()
 
-// Start a server
-db.ListenAndServe(":9000", nil)
+// start a server
+postdb.ListenAndServe(db, &postdb.ServerConfig{
+  Port: 9000,
+  Secret: "PASS",
+})
 ```
 
-as client:
+as client of C/S:
 
 ```go
-// Connect to server
-db, err := postdb.Connect("localhost:9000", nil)
+// connect to server
+db, err := postdb.Connect(&postdb.ConnConfig{
+    Host: "localhost"
+    Port: 9000,
+    Secret: "PASS",
+})
 if err != nil {
   return err
 }
 
-db.GetPosts(typeid)
+// use database
+db.GetPosts("type")
+...
+```
+
+
+as graphql http handler:
+
+```go
+// opening a ns database
+db, err := postdb.New("path")
+if err != nil {
+  return err
+}
+defer db.Close()
+
+graphql := postdb.NewGraphql(db)
+// register graphql http handler
+http.Handle("/graphql", graphql)
+// with simple basic auth
+http.Handle("/graphql", httpauth.SimpleBasicAuth("username", "PASS")(graphql))
+http.ListenAndServe(":8080", nil)
 ```
 <br/>
 
