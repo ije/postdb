@@ -93,7 +93,6 @@ db.GetPosts("type")
 ...
 ```
 
-
 as graphql http handler:
 
 ```go
@@ -111,6 +110,9 @@ http.Handle("/graphql", graphql)
 http.Handle("/graphql", httpauth.SimpleBasicAuth("username", "PASS")(graphql))
 http.ListenAndServe(":8080", nil)
 ```
+
 <br/>
+
+__
 
 Copyright (c) 2020-present, [postUI Inc.](https://postui.com)
