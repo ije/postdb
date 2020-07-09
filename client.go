@@ -6,15 +6,15 @@ import (
 	"github.com/ije/puddle"
 )
 
-type Client struct {
-	pool *puddle.Pool
-}
-
 type ConnConfig struct {
 	Host      string
 	Port      uint16
 	Secret    string
 	TLSConfig *tls.Config
+}
+
+type Client struct {
+	pool *puddle.Pool
 }
 
 func Connect(conn *ConnConfig) (*Client, error) {
