@@ -19,21 +19,28 @@ defer db.Close()
 
 // get typed posts
 db.GetPosts("type")
+
 // get typed posts with query
 db.GetPosts("type", q.Status(q.DRAFT, q.NORMAL), q.Tag("tag"), q.Range(0, 100), q.SortBy("crtime", q.DESC))
+
 // get post by id
 db.GetPost("id")
+
 // add a new post
 db.AddPost("type", q.Tag("tag"), q.KV{"k": []byte("v")})
+
 // update the existing post
 db.UpdatePost("id", q.Tag("tagA", "tagB"), q.KV{"k": []byte("v")})
+
 // remove the existing post
 db.RemovePost("id")
+
 // backup the database
 db.WriteTo(w)
 
 // get the value for a key
 db.GetValue("k")
+
 // put the value for a key
 db.PutValue("k", []byte("v"))
 ```
@@ -53,6 +60,7 @@ db.GetPosts("type")
 
 // create namespace database
 nsdb := db.Namespace("name")
+
 // use namespace database
 nsdb.GetPosts("type")
 ...
@@ -68,7 +76,7 @@ if err != nil {
 }
 defer db.Close()
 
-// start a server
+// start the server
 postdb.ListenAndServe(db, &postdb.ServerConfig{
   Port: 9000,
   Secret: "PASS",
@@ -103,11 +111,13 @@ if err != nil {
 }
 defer db.Close()
 
-graphql := postdb.NewGraphql(db)
 // register graphql http handler
-http.Handle("/graphql", graphql)
+http.Handle("/graphql", postdb.NewGraphql(db))
+
 // with simple basic auth
-http.Handle("/graphql", httpauth.SimpleBasicAuth("username", "PASS")(graphql))
+http.Handle("/graphql", httpauth.SimpleBasicAuth("username", "PASS")(postdb.NewGraphql(db)))
+
+// start the http server
 http.ListenAndServe(":8080", nil)
 ```
 
