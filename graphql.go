@@ -7,11 +7,11 @@ import (
 )
 
 type GraphQL struct {
-	db     *NSDB
+	db     Database
 	schema *graphql.Schema
 }
 
-func NewGraphql(db *NSDB) *GraphQL {
+func NewGraphql(db Database) *GraphQL {
 	return nil
 }
 

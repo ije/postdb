@@ -65,7 +65,8 @@ func (ns *NSDB) Close() (err error) {
 	ns.lock.Lock()
 	defer ns.lock.Unlock()
 
-	for _, db := range ns.namespaces {
+	for name, db := range ns.namespaces {
+		delete(ns.namespaces, name)
 		db.Close()
 	}
 	return ns.DB.Close()
