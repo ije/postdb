@@ -6,15 +6,15 @@ import (
 	"github.com/graphql-go/graphql"
 )
 
-type GraphQL struct {
+type GraphQLMux struct {
 	db     Database
 	schema *graphql.Schema
 }
 
-func NewGraphql(db Database) *GraphQL {
+func Graphql(db Database) *GraphQLMux {
 	return nil
 }
 
-func (gql *GraphQL) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (mux *GraphQLMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 }

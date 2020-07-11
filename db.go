@@ -24,9 +24,25 @@ func Open(path string, mode os.FileMode) (db *DB, err error) {
 	}
 
 	err = b.Update(func(tx *bolt.Tx) error {
-		bucketNames := [][]byte{valuesKey, postmetaKey, postkvKey}
-		for _, name := range bucketNames {
-			_, err := tx.CreateBucketIfNotExists([]byte(name))
+		for _, key := range [][]byte{
+			valuesKey,
+			postmetaKey,
+			postindexKey,
+			postkvKey,
+		} {
+			_, err := tx.CreateBucketIfNotExists(key)
+			if err != nil {
+				return err
+			}
+		}
+		indexBucket := tx.Bucket(postindexKey)
+		for _, key := range [][]byte{
+			slugsKey,
+			typesKey,
+			ownersKey,
+			tagsKey,
+		} {
+			_, err := indexBucket.CreateBucketIfNotExists(key)
 			if err != nil {
 				return err
 			}
@@ -47,7 +63,8 @@ func (db *DB) Begin(writable bool) (*Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Tx{tx: tx}, nil
+
+	return &Tx{tx}, nil
 }
 
 // GetValue returns the value for a key in the database.
@@ -57,7 +74,8 @@ func (db *DB) GetValue(key string) ([]byte, error) {
 		return nil, err
 	}
 	defer tx.Rollback()
-	return tx.GetValue(key)
+
+	return tx.GetValue(key), nil
 }
 
 // PutValue sets the value for a key in the database.
@@ -72,43 +90,63 @@ func (db *DB) PutValue(key string, value []byte) error {
 	if err != nil {
 		return err
 	}
+
 	return tx.Commit()
 }
 
-func (db *DB) GetPost(id string) (*Post, error) {
+func (db *DB) GetPost(id string, keys q.Keys) (*q.Post, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
-	return tx.GetPost(id)
+
+	return tx.GetPost(id, keys)
 }
 
-func (db *DB) GetPosts(postType string, qs ...[]q.Query) ([]Post, error) {
+func (db *DB) GetPosts(qs ...q.Query) ([]q.Post, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
-	return tx.GetPosts(postType, qs...)
+
+	return tx.GetPosts(qs...)
 }
 
-func (db *DB) AddPost(postType string, qs ...[]q.Query) error {
+func (db *DB) AddPost(postType string, qs ...q.Query) (*q.Post, error) {
+	tx, err := db.Begin(true)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	post, err := tx.AddPost(postType, qs...)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return post, nil
+}
+
+func (db *DB) UpdatePost(id string, qs ...q.Query) error {
 	tx, err := db.Begin(true)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	return tx.AddPost(postType, qs...)
-}
 
-func (db *DB) UpdatePost(id string, qs ...[]q.Query) error {
-	tx, err := db.Begin(true)
+	err = tx.UpdatePost(id, qs...)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
-	return tx.UpdatePost(id, qs...)
+
+	return tx.Commit()
 }
 
 func (db *DB) RemovePost(id string) error {
@@ -117,7 +155,13 @@ func (db *DB) RemovePost(id string) error {
 		return err
 	}
 	defer tx.Rollback()
-	return tx.RemovePost(id)
+
+	err = tx.RemovePost(id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // WriteTo writes the entire database to a writer.
@@ -127,6 +171,7 @@ func (db *DB) WriteTo(w io.Writer) (int64, error) {
 		return 0, err
 	}
 	defer tx.Rollback()
+
 	return tx.WriteTo(w)
 }
 

@@ -10,6 +10,10 @@ type ServerConfig struct {
 	TLSConfig *tls.Config
 }
 
+type Server struct {
+	db Database
+}
+
 func ListenAndServe(db Database, config *ServerConfig) error {
 	return nil
 }
