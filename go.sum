@@ -1,7 +1,11 @@
 github.com/graphql-go/graphql v0.7.9 h1:5Va/Rt4l5g3YjwDnid3vFfn43faaQBq7rMcIZ0VnV34=
 github.com/graphql-go/graphql v0.7.9/go.mod h1:k6yrAYQaSP59DC5UVxbgxESlmVyojThKdORUqGDGmrI=
+github.com/ije/gox v0.5.6 h1:46DNSa7ZWIGYm1Rk4Xa23bWUrXy+k7kq0EbDqZUYyL0=
+github.com/ije/gox v0.5.6/go.mod h1:mjhU1hphPiRfw0u7WQX3Zo7X/p7SUS067WjBIP5T4uE=
 github.com/ije/puddle v1.1.2 h1:gtmEZa5lwFMbTdo6/+wgf8Zr26h3bI4LDvG4exbdzfU=
 github.com/ije/puddle v1.1.2/go.mod h1:cPPDHY2YlIceNRIT/xlY5+Bwccf13C3OSwfq7rYCuVM=
+github.com/rs/xid v1.2.1 h1:mhH9Nq+C1fY2l1XIpgxIiUOfNpRBYH1kKcr+qfKgjRc=
+github.com/rs/xid v1.2.1/go.mod h1:+uKXf+4Djp6Md1KODXJxgGQPKngRmWyn10oCKFzNHOQ=
 go.etcd.io/bbolt v1.3.5 h1:XAzx9gjCb0Rxj7EoqcClPD1d5ZBxZJk0jbuoPHenBt0=
 go.etcd.io/bbolt v1.3.5/go.mod h1:G5EMThwa9y8QZGBClrRx5EY+Yw9kAhnjy3bSjsnlVTQ=
 golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
