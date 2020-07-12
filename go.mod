@@ -3,7 +3,6 @@ module github.com/postui/postdb
 go 1.14
 
 require (
-	github.com/graphql-go/graphql v0.7.9
 	github.com/ije/gox v0.5.6
 	github.com/ije/puddle v1.1.2
 	github.com/rs/xid v1.2.1
