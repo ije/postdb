@@ -29,7 +29,7 @@ func TestPostMeta(t *testing.T) {
 
 	toBe(t, "post.KV.title", string(post.KV["title"]), "Hello World!")
 	toBe(t, "post.KV.date", string(post.KV["date"]), "2020-01-01")
-	toBe(t, "_post.ID", string(_post.ID), string(post.ID))
+	toBe(t, "_post.ID", _post.ID.String(), post.ID.String())
 	toBe(t, "_post.Type", _post.Type, post.Type)
 	toBe(t, "_post.ACL", _post.Status, post.Status)
 	toBe(t, "_post.Owner", _post.Owner, post.Owner)

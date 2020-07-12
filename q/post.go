@@ -15,7 +15,7 @@ var (
 
 // A Post specifies a post of postdb.
 type Post struct {
-	ID     []byte
+	ID     xid.ID
 	Slug   string
 	Type   string
 	Status uint8
@@ -28,7 +28,7 @@ type Post struct {
 // NewPost returns a new post.
 func NewPost() *Post {
 	return &Post{
-		ID:     xid.New().Bytes(),
+		ID:     xid.New(),
 		Status: 1,
 		Crtime: uint64(time.Now().UnixNano() / int64(time.Millisecond)),
 		Tags:   []string{},
@@ -57,7 +57,11 @@ func PostFromBytes(data []byte) (*Post, error) {
 		return nil, errPostMeta
 	}
 
-	id := data[4:16]
+	id, err := xid.FromBytes(data[4:16])
+	if err != nil {
+		return nil, errPostMeta
+	}
+
 	status := data[16]
 	crtime := binary.BigEndian.Uint64(data[17:25])
 	slugLen := int(data[25])
@@ -81,6 +85,7 @@ func PostFromBytes(data []byte) (*Post, error) {
 		tags[t] = string(data[i+1 : tEnd])
 		i += 1 + tl
 	}
+
 	return &Post{
 		ID:     id,
 		Slug:   string(slug),
@@ -127,7 +132,7 @@ func (p *Post) MetaData() []byte {
 	}
 	buf := make([]byte, metaLen)
 	copy(buf, postPrefix)
-	copy(buf[4:], p.ID)
+	copy(buf[4:], p.ID.Bytes())
 	buf[16] = byte(p.Status)
 	binary.BigEndian.PutUint64(buf[17:], p.Crtime)
 	buf[25] = byte(slugLen)

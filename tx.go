@@ -124,7 +124,7 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
 
 	if len(res.Keys) > 0 {
 		for _, post := range posts {
-			postkvBucket := kvBucket.Bucket(post.ID)
+			postkvBucket := kvBucket.Bucket(post.ID.Bytes())
 			for _, key := range res.Keys {
 				v := postkvBucket.Get([]byte(key))
 				if v != nil {
@@ -163,7 +163,7 @@ func (tx *Tx) GetPost(qs ...q.Query) (*q.Post, error) {
 	}
 
 	if len(res.Keys) > 0 {
-		kvBucket := tx.t.Bucket(postkvKey).Bucket(post.ID)
+		kvBucket := tx.t.Bucket(postkvKey).Bucket(post.ID.Bytes())
 		for _, key := range res.Keys {
 			v := kvBucket.Get([]byte(key))
 			if v != nil {
@@ -185,13 +185,13 @@ func (tx *Tx) AddPost(qs ...q.Query) (*q.Post, error) {
 	indexBucket := tx.t.Bucket(postindexKey)
 	kvBucket := tx.t.Bucket(postkvKey)
 
-	err := metaBucket.Put(post.ID, post.MetaData())
+	err := metaBucket.Put(post.ID.Bytes(), post.MetaData())
 	if err != nil {
 		return nil, err
 	}
 
 	if len(post.KV) > 0 {
-		postkvBucket, err := kvBucket.CreateBucketIfNotExists(post.ID)
+		postkvBucket, err := kvBucket.CreateBucketIfNotExists(post.ID.Bytes())
 		if err != nil {
 			return nil, err
 		}
@@ -205,7 +205,7 @@ func (tx *Tx) AddPost(qs ...q.Query) (*q.Post, error) {
 
 	if len(post.Slug) > 0 {
 		slugsBucket := indexBucket.Bucket(slugsKey)
-		err = slugsBucket.Put([]byte(post.Slug), post.ID)
+		err = slugsBucket.Put([]byte(post.Slug), post.ID.Bytes())
 		if err != nil {
 			return nil, err
 		}
@@ -214,7 +214,7 @@ func (tx *Tx) AddPost(qs ...q.Query) (*q.Post, error) {
 	hasType := len(post.Type) > 0
 	if hasType {
 		typesBucket := indexBucket.Bucket(typesKey)
-		keypath := [][]byte{[]byte(post.Type), post.ID}
+		keypath := [][]byte{[]byte(post.Type), post.ID.Bytes()}
 		err = typesBucket.Put(bytes.Join(keypath, []byte{0}), []byte{1})
 		if err != nil {
 			return nil, err
@@ -225,9 +225,9 @@ func (tx *Tx) AddPost(qs ...q.Query) (*q.Post, error) {
 		ownersBucket := indexBucket.Bucket(ownersKey)
 		var keypath [][]byte
 		if hasType {
-			keypath = [][]byte{[]byte(post.Owner), []byte(post.Type), post.ID}
+			keypath = [][]byte{[]byte(post.Owner), []byte(post.Type), post.ID.Bytes()}
 		} else {
-			keypath = [][]byte{[]byte(post.Owner), post.ID}
+			keypath = [][]byte{[]byte(post.Owner), post.ID.Bytes()}
 		}
 		err = ownersBucket.Put(bytes.Join(keypath, []byte{0}), []byte{1})
 		if err != nil {
@@ -240,9 +240,9 @@ func (tx *Tx) AddPost(qs ...q.Query) (*q.Post, error) {
 		for _, tag := range post.Tags {
 			var keypath [][]byte
 			if hasType {
-				keypath = [][]byte{[]byte(tag), []byte(post.Type), post.ID}
+				keypath = [][]byte{[]byte(tag), []byte(post.Type), post.ID.Bytes()}
 			} else {
-				keypath = [][]byte{[]byte(tag), post.ID}
+				keypath = [][]byte{[]byte(tag), post.ID.Bytes()}
 			}
 			err = tagsBucket.Put(bytes.Join(keypath, []byte{0}), []byte{1})
 			if err != nil {
@@ -279,7 +279,7 @@ func (tx *Tx) RemovePost(qs ...q.Query) error {
 	indexBucket := tx.t.Bucket(postindexKey)
 	kvBucket := tx.t.Bucket(postkvKey)
 
-	err = metaBucket.Delete(post.ID)
+	err = metaBucket.Delete(post.ID.Bytes())
 	if err != nil {
 		return err
 	}
@@ -295,7 +295,7 @@ func (tx *Tx) RemovePost(qs ...q.Query) error {
 
 	if len(post.Type) > 0 {
 		typesBucket := indexBucket.Bucket(typesKey)
-		keypath := [][]byte{[]byte(post.Type), post.ID}
+		keypath := [][]byte{[]byte(post.Type), post.ID.Bytes()}
 		err = typesBucket.Delete(bytes.Join(keypath, []byte{0}))
 		if err != nil {
 			return err
@@ -307,9 +307,9 @@ func (tx *Tx) RemovePost(qs ...q.Query) error {
 		ownersBucket := indexBucket.Bucket(ownersKey)
 		var keypath [][]byte
 		if len(post.Type) > 0 {
-			keypath = [][]byte{[]byte(post.Owner), []byte(post.Type), post.ID}
+			keypath = [][]byte{[]byte(post.Owner), []byte(post.Type), post.ID.Bytes()}
 		} else {
-			keypath = [][]byte{[]byte(post.Owner), post.ID}
+			keypath = [][]byte{[]byte(post.Owner), post.ID.Bytes()}
 		}
 		err = ownersBucket.Delete(bytes.Join(keypath, []byte{0}))
 		if err != nil {
@@ -323,9 +323,9 @@ func (tx *Tx) RemovePost(qs ...q.Query) error {
 		for _, tag := range post.Tags {
 			var keypath [][]byte
 			if len(post.Type) > 0 {
-				keypath = [][]byte{[]byte(tag), []byte(post.Type), post.ID}
+				keypath = [][]byte{[]byte(tag), []byte(post.Type), post.ID.Bytes()}
 			} else {
-				keypath = [][]byte{[]byte(tag), post.ID}
+				keypath = [][]byte{[]byte(tag), post.ID.Bytes()}
 			}
 			err = tagsBucket.Delete(bytes.Join(keypath, []byte{0}))
 			if err != nil {
@@ -335,7 +335,7 @@ func (tx *Tx) RemovePost(qs ...q.Query) error {
 		}
 	}
 
-	err = kvBucket.DeleteBucket(post.ID)
+	err = kvBucket.DeleteBucket(post.ID.Bytes())
 	return err
 }
 
