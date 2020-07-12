@@ -3,10 +3,8 @@ package q
 import (
 	"encoding/binary"
 	"errors"
-	"strings"
 	"time"
 
-	"github.com/ije/gox/valid"
 	"github.com/rs/xid"
 )
 
@@ -20,18 +18,19 @@ type Post struct {
 	ID     []byte
 	Slug   string
 	Type   string
-	ACL    ACL
+	Status uint8
 	Owner  string
 	Crtime uint64
 	Tags   []string
 	KV     KV
 }
 
+// NewPost returns a new post
 func NewPost(postType string) *Post {
 	return &Post{
 		ID:     xid.New().Bytes(),
 		Type:   toLowerTrim(postType),
-		ACL:    PUBLIC_READ,
+		Status: 1,
 		Crtime: uint64(time.Now().UnixNano() / int64(time.Millisecond)),
 		Tags:   []string{},
 		KV:     KV{},
@@ -60,7 +59,7 @@ func ParsePostMeta(data []byte) (*Post, error) {
 	}
 
 	id := data[4:16]
-	acl := data[16]
+	status := data[16]
 	crtime := binary.BigEndian.Uint64(data[17:25])
 	slugLen := int(data[25])
 	typeLen := int(data[26])
@@ -88,7 +87,7 @@ func ParsePostMeta(data []byte) (*Post, error) {
 		Slug:   string(slug),
 		Type:   string(postType),
 		Owner:  string(owner),
-		ACL:    ACL(acl),
+		Status: uint8(status),
 		Crtime: crtime,
 		Tags:   tags,
 		KV:     KV{},
@@ -102,7 +101,7 @@ func (p *Post) Clone(qs ...Query) *Post {
 		Type:   p.Type,
 		Slug:   p.Slug,
 		Owner:  p.Owner,
-		ACL:    p.ACL,
+		Status: p.Status,
 		Crtime: p.Crtime,
 		Tags:   make([]string, len(p.Tags)),
 		KV:     KV{},
@@ -130,7 +129,7 @@ func (p *Post) MetaData() []byte {
 	buf := make([]byte, metaLen)
 	copy(buf, postPrefix)
 	copy(buf[4:], p.ID)
-	buf[16] = byte(p.ACL)
+	buf[16] = byte(p.Status)
 	binary.BigEndian.PutUint64(buf[17:], p.Crtime)
 	buf[25] = byte(slugLen)
 	buf[26] = byte(typeLen)
@@ -166,41 +165,22 @@ func (p *Post) MetaData() []byte {
 // ApplyQuery applies query
 func (p *Post) ApplyQuery(query Query) {
 	switch query.QueryType() {
-	case "kv":
-		kv, ok := query.(KV)
-		if ok {
-			if p.KV == nil {
-				p.KV = KV{}
-			}
-			for k, v := range kv {
-				if len(k) > 0 && v != nil {
-					p.KV[k] = v
-				}
-			}
-		}
-
 	case "slug":
 		q, ok := query.(slugQuery)
 		if ok {
-			slug := strings.ReplaceAll(toLowerTrim(string(q)), " ", "-")
-			if valid.IsSlug(slug) {
-				p.Slug = slug
-			}
+			p.Slug = toLowerTrim(string(q))
 		}
 
 	case "type":
 		q, ok := query.(typeQuery)
 		if ok {
-			postType := toLowerTrim(string(q))
-			if postType != "" {
-				p.Type = postType
-			}
+			p.Type = toLowerTrim(string(q))
 		}
 
-	case "acl":
-		acl, ok := query.(ACL)
+	case "status":
+		status, ok := query.(statusQuery)
 		if ok {
-			p.ACL = acl
+			p.Status = uint8(status)
 		}
 
 	case "owner":
@@ -216,6 +196,19 @@ func (p *Post) ApplyQuery(query Query) {
 		tags, ok := query.(tagsQuery)
 		if ok {
 			p.Tags = tags
+		}
+
+	case "kv":
+		kv, ok := query.(KV)
+		if ok {
+			if p.KV == nil {
+				p.KV = KV{}
+			}
+			for k, v := range kv {
+				if len(k) > 0 && v != nil {
+					p.KV[k] = v
+				}
+			}
 		}
 	}
 }

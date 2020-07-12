@@ -24,9 +24,9 @@ func TestDB(t *testing.T) {
 	}
 
 	post, err := db.AddPost(
-		"news",
+		q.Type("news"),
 		q.Slug("hello-world"),
-		q.ACL(q.PUBLIC_READ),
+		q.Status(2),
 		q.Owner("admin"),
 		q.Tags("hello", "world", "世界"),
 		q.KV{
@@ -37,13 +37,11 @@ func TestDB(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	t.Logf("post(%x) added", post.ID)
 
 	posts, err = db.GetPosts(q.Tags("世界"))
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	t.Log("posts by tag(世界): ", len(posts))
 }

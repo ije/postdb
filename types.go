@@ -22,10 +22,10 @@ type Database interface {
 	GetValue(key string) ([]byte, error)
 	PutValue(key string, value []byte) error
 	GetPosts(qs ...q.Query) ([]q.Post, error)
-	GetPost(idOrSlug string, keys q.Keys) (*q.Post, error)
-	AddPost(postType string, qs ...q.Query) (*q.Post, error)
-	UpdatePost(idOrSlug string, qs ...q.Query) error
-	RemovePost(idOrSlug string) error
+	GetPost(qs ...q.Query) (*q.Post, error)
+	AddPost(qs ...q.Query) (*q.Post, error)
+	UpdatePost(qs ...q.Query) error
+	RemovePost(qs ...q.Query) error
 	WriteTo(w io.Writer) (int64, error)
 }
 

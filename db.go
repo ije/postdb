@@ -94,14 +94,14 @@ func (db *DB) PutValue(key string, value []byte) error {
 	return tx.Commit()
 }
 
-func (db *DB) GetPost(id string, keys q.Keys) (*q.Post, error) {
+func (db *DB) GetPost(qs ...q.Query) (*q.Post, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
-	return tx.GetPost(id, keys)
+	return tx.GetPost(qs...)
 }
 
 func (db *DB) GetPosts(qs ...q.Query) ([]q.Post, error) {
@@ -114,14 +114,14 @@ func (db *DB) GetPosts(qs ...q.Query) ([]q.Post, error) {
 	return tx.GetPosts(qs...)
 }
 
-func (db *DB) AddPost(postType string, qs ...q.Query) (*q.Post, error) {
+func (db *DB) AddPost(qs ...q.Query) (*q.Post, error) {
 	tx, err := db.Begin(true)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
-	post, err := tx.AddPost(postType, qs...)
+	post, err := tx.AddPost(qs...)
 	if err != nil {
 		return nil, err
 	}
@@ -134,14 +134,14 @@ func (db *DB) AddPost(postType string, qs ...q.Query) (*q.Post, error) {
 	return post, nil
 }
 
-func (db *DB) UpdatePost(id string, qs ...q.Query) error {
+func (db *DB) UpdatePost(qs ...q.Query) error {
 	tx, err := db.Begin(true)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	err = tx.UpdatePost(id, qs...)
+	err = tx.UpdatePost(qs...)
 	if err != nil {
 		return err
 	}
@@ -149,14 +149,14 @@ func (db *DB) UpdatePost(id string, qs ...q.Query) error {
 	return tx.Commit()
 }
 
-func (db *DB) RemovePost(id string) error {
+func (db *DB) RemovePost(qs ...q.Query) error {
 	tx, err := db.Begin(true)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	err = tx.RemovePost(id)
+	err = tx.RemovePost(qs...)
 	if err != nil {
 		return err
 	}
