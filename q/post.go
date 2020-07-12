@@ -26,10 +26,9 @@ type Post struct {
 }
 
 // NewPost returns a new post.
-func NewPost(postType string) *Post {
+func NewPost() *Post {
 	return &Post{
 		ID:     xid.New().Bytes(),
-		Type:   toLowerTrim(postType),
 		Status: 1,
 		Crtime: uint64(time.Now().UnixNano() / int64(time.Millisecond)),
 		Tags:   []string{},
@@ -37,8 +36,8 @@ func NewPost(postType string) *Post {
 	}
 }
 
-// ParsePost parses a post from bytes.
-func ParsePost(data []byte) (*Post, error) {
+// PostFromBytes parses a post from bytes.
+func PostFromBytes(data []byte) (*Post, error) {
 	dl := len(data)
 	if dl < 30 {
 		return nil, errPostMeta

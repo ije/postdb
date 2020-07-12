@@ -6,8 +6,9 @@ import (
 )
 
 func TestPostMeta(t *testing.T) {
-	post := NewPost("blog")
+	post := NewPost()
 	for _, q := range []Query{
+		Type("blog"),
 		Slug("Hello World"),
 		Status(0),
 		Owner("admin"),
@@ -21,7 +22,7 @@ func TestPostMeta(t *testing.T) {
 	}
 
 	metadata := post.MetaData()
-	_post, err := ParsePost(metadata)
+	_post, err := PostFromBytes(metadata)
 	if err != nil {
 		t.Fatal(err)
 	}

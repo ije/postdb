@@ -78,7 +78,7 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
 			k, v = c.First()
 		}
 		for ; len(k) == 12; k, v = c.Next() {
-			post, err = q.ParsePost(v)
+			post, err = q.PostFromBytes(v)
 			if err != nil {
 				posts = nil
 				return
@@ -104,7 +104,7 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
 				id := k[len(k)-12:]
 				data := metaBucket.Get(id)
 				if data != nil {
-					p, err = q.ParsePost(data)
+					p, err = q.PostFromBytes(data)
 					if err != nil {
 						posts = nil
 						return
@@ -143,21 +143,21 @@ func (tx *Tx) GetPost(qs ...q.Query) (*q.Post, error) {
 	}
 
 	metaBucket := tx.t.Bucket(postmetaKey)
-	var postMetaData []byte
+	var metaData []byte
 	if len(res.ID) == 12 {
-		postMetaData = metaBucket.Get(res.ID)
+		metaData = metaBucket.Get(res.ID)
 	} else if len(res.Slug) > 0 {
 		slugsBucket := tx.t.Bucket(postindexKey).Bucket(slugsKey)
 		id := slugsBucket.Get([]byte(res.Slug))
 		if id != nil {
-			postMetaData = metaBucket.Get(id)
+			metaData = metaBucket.Get(id)
 		}
 	}
-	if postMetaData == nil {
+	if metaData == nil {
 		return nil, ErrNotFound
 	}
 
-	post, err := q.ParsePost(postMetaData)
+	post, err := q.PostFromBytes(metaData)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (tx *Tx) GetPost(qs ...q.Query) (*q.Post, error) {
 }
 
 func (tx *Tx) AddPost(qs ...q.Query) (*q.Post, error) {
-	post := q.NewPost("")
+	post := q.NewPost()
 	for _, q := range qs {
 		post.ApplyQuery(q)
 	}
