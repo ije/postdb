@@ -27,7 +27,7 @@ db.PutValue("k", []byte("v"))
 db.GetPosts()
 
 // get posts with query
-db.GetPosts(q.Type("type"), q.Tags("tag"), q.Range("", 100), q.DESC)
+db.GetPosts(q.Type("type"), q.Tags("tag"), q.Range("", 100), q.Order(q.DESC))
 
 // get post by id without kv
 db.GetPost(q.ID("id"))
@@ -62,10 +62,10 @@ db.GetPosts()
 ...
 
 // create namespace database
-nsdb := db.Namespace("name")
+ns := db.Namespace("name")
 
 // use namespace database
-nsdb.GetPosts()
+ns.GetPosts()
 ...
 ```
 
@@ -80,8 +80,9 @@ if err != nil {
 defer db.Close()
 
 // start the server
-postdb.ListenAndServe(db, &postdb.ServerConfig{
-    Port: 9000,
+postdb.ListenAndServe(postdb.ServerConfig{
+    DB:     db,
+    Port:   9000,
     Secret: "PASS",
 })
 ```
@@ -90,9 +91,9 @@ as client of C/S:
 
 ```go
 // connect to server
-db, err := postdb.Connect(&postdb.ConnConfig{
-    Host: "localhost"
-    Port: 9000,
+db, err := postdb.Connect(postdb.ConnConfig{
+    Host:   "localhost"
+    Port:   9000,
     Secret: "PASS",
 })
 if err != nil {
