@@ -112,8 +112,6 @@ db.GetPosts()
 ...
 ```
 
-
-<br/>
-__
+#   
 
 Copyright (c) 2020-present, [postUI Inc.](https://postui.com)
