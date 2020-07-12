@@ -13,36 +13,39 @@ as an embedded database:
 // opening a database
 db, err := postdb.Open("post.db", 0666)
 if err != nil {
-  return err
+    return err
 }
 defer db.Close()
-
-// get typed posts
-db.GetPosts("type")
-
-// get typed posts with query
-db.GetPosts("type", q.Status(q.DRAFT, q.NORMAL), q.Tag("tag"), q.Range(0, 100), q.SortBy("crtime", q.DESC))
-
-// get post by id
-db.GetPost("id")
-
-// add a new post
-db.AddPost("type", q.Tag("tag"), q.KV{"k": []byte("v")})
-
-// update the existing post
-db.UpdatePost("id", q.Tag("tagA", "tagB"), q.KV{"k": []byte("v")})
-
-// remove the existing post
-db.RemovePost("id")
-
-// backup the database
-db.WriteTo(w)
 
 // get the value for a key
 db.GetValue("k")
 
 // put the value for a key
 db.PutValue("k", []byte("v"))
+
+// get all posts
+db.GetPosts()
+
+// get posts with query
+db.GetPosts(q.Type("type"), q.Tags("tag"), q.Range("", 100), q.DESC)
+
+// get post by id without kv
+db.GetPost(q.ID("id"))
+
+// get post by id with kv
+db.GetPost(q.ID("id"), q.Keys{"title", "thumb", "content"))
+
+// add a new post
+db.AddPost(q.Type("type"), q.Slug("slug"), q.Tags("tag"), q.KV{"k": []byte("v")})
+
+// update the existing post
+db.UpdatePost(q.ID("id"),  q.Tags("tagA", "tagB"), q.KV{"k": []byte("v")})
+
+// remove the existing post permanently
+db.RemovePost(q.ID("id"))
+
+// backup the entire database
+db.WriteTo(w)
 ```
 
 with namespace:
@@ -50,19 +53,19 @@ with namespace:
 // opening a ns database
 db, err := postdb.New("path")
 if err != nil {
-  return err
+    return err
 }
 defer db.Close()
  
 // use default namespace "public"
-db.GetPosts("type")
+db.GetPosts()
 ...
 
 // create namespace database
 nsdb := db.Namespace("name")
 
 // use namespace database
-nsdb.GetPosts("type")
+nsdb.GetPosts()
 ...
 ```
 
@@ -72,14 +75,14 @@ as server of C/S:
 // Opening a ns database
 db, err := postdb.New("path")
 if err != nil {
-  return err
+    return err
 }
 defer db.Close()
 
 // start the server
 postdb.ListenAndServe(db, &postdb.ServerConfig{
-  Port: 9000,
-  Secret: "PASS",
+    Port: 9000,
+    Secret: "PASS",
 })
 ```
 
@@ -93,32 +96,12 @@ db, err := postdb.Connect(&postdb.ConnConfig{
     Secret: "PASS",
 })
 if err != nil {
-  return err
+    return err
 }
 
 // use database
-db.GetPosts("type")
+db.GetPosts()
 ...
-```
-
-as graphql http handler:
-
-```go
-// opening a ns database
-db, err := postdb.New("path")
-if err != nil {
-  return err
-}
-defer db.Close()
-
-// register graphql http handler
-http.Handle("/graphql", postdb.NewGraphql(db))
-
-// with simple basic auth
-http.Handle("/graphql", httpauth.SimpleBasicAuth("username", "PASS")(postdb.NewGraphql(db)))
-
-// start the http server
-http.ListenAndServe(":8080", nil)
 ```
 
 <br/>
