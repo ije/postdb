@@ -11,10 +11,10 @@ type ServerConfig struct {
 	TLSConfig *tls.Config
 }
 
-type Server struct {
+type server struct {
 	db *NSDB
 }
 
-func ListenAndServe(config ServerConfig) error {
+func Serve(config ServerConfig) error {
 	return nil
 }

@@ -163,50 +163,32 @@ func (p *Post) MetaData() []byte {
 
 // ApplyQuery applies a query.
 func (p *Post) ApplyQuery(query Query) {
-	switch query.QueryType() {
-	case "slug":
-		q, ok := query.(slugQuery)
-		if ok {
-			p.Slug = toLowerTrim(string(q))
+	switch q := query.(type) {
+	case slugQuery:
+		p.Slug = toLowerTrim(string(q))
+
+	case typeQuery:
+		p.Type = toLowerTrim(string(q))
+
+	case statusQuery:
+		p.Status = uint8(q)
+
+	case ownerQuery:
+		name := toLowerTrim(string(q))
+		if name != "" {
+			p.Owner = name
 		}
 
-	case "type":
-		q, ok := query.(typeQuery)
-		if ok {
-			p.Type = toLowerTrim(string(q))
-		}
+	case tagsQuery:
+		p.Tags = q
 
-	case "status":
-		status, ok := query.(statusQuery)
-		if ok {
-			p.Status = uint8(status)
+	case KV:
+		if p.KV == nil {
+			p.KV = KV{}
 		}
-
-	case "owner":
-		q, ok := query.(ownerQuery)
-		if ok {
-			name := toLowerTrim(string(q))
-			if name != "" {
-				p.Owner = name
-			}
-		}
-
-	case "tags":
-		tags, ok := query.(tagsQuery)
-		if ok {
-			p.Tags = tags
-		}
-
-	case "kv":
-		kv, ok := query.(KV)
-		if ok {
-			if p.KV == nil {
-				p.KV = KV{}
-			}
-			for k, v := range kv {
-				if len(k) > 0 && v != nil {
-					p.KV[k] = v
-				}
+		for k, v := range q {
+			if len(k) > 0 && v != nil {
+				p.KV[k] = v
 			}
 		}
 	}
