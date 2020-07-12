@@ -3,11 +3,15 @@
 A database to store your posts in [golang](https://golang.org) with [bbolt](https://github.com/etcd-io/bbolt), noSQL.
 
 [![GoDoc](https://godoc.org/github.com/postui/postdb?status.svg)](https://godoc.org/github.com/postui/postdb)
+[![GoReport](https://goreportcard.com/badge/github.com/postui/postdb)](https://goreportcard.com/report/github.com/postui/postdb)
+[![MIT](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+
 
 ## Installing
 ```bash
 go get github.com/postui/postdb
 ``` 
+
 
 ## Usage
 as an embedded database:
@@ -108,8 +112,8 @@ db.GetPosts()
 ...
 ```
 
-<br/>
 
+<br/>
 __
 
 Copyright (c) 2020-present, [postUI Inc.](https://postui.com)
