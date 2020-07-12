@@ -96,11 +96,11 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
 		var p *q.Post
 		for _, prefix := range prefixs {
 			if len(res.Aftar) == 12 {
-				k, _ = cur.Seek(bytes.Join([][]byte{prefix, res.Aftar}, []byte{}))
+				k, _ = cur.Seek(bytes.Join([][]byte{prefix, res.Aftar}, []byte{0}))
 			} else {
 				k, _ = cur.Seek(prefix)
 			}
-			for ; len(k) > 12+len(prefix) && bytes.HasPrefix(k, prefix); k, _ = cur.Next() {
+			for ; k != nil && bytes.HasPrefix(k, prefix); k, _ = cur.Next() {
 				id := k[len(k)-12:]
 				data := metaBucket.Get(id)
 				if data != nil {
