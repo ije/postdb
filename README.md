@@ -2,6 +2,8 @@
 
 A database to store your posts in [golang](https://golang.org) with [bbolt](https://github.com/etcd-io/bbolt), noSQL.
 
+[![GoDoc](https://godoc.org/github.com/postui/postdb?status.svg)](https://godoc.org/github.com/postui/postdb)
+
 ## Installing
 ```bash
 go get github.com/postui/postdb
