@@ -17,6 +17,6 @@ type Client struct {
 	pool *puddle.Pool
 }
 
-func Connect(conn *ConnConfig) (*Client, error) {
+func Connect(config ConnConfig) (*Client, error) {
 	return nil, nil
 }

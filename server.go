@@ -5,15 +5,16 @@ import (
 )
 
 type ServerConfig struct {
+	DB        *NSDB
 	Port      uint16
 	Secret    string
 	TLSConfig *tls.Config
 }
 
 type Server struct {
-	db Database
+	db *NSDB
 }
 
-func ListenAndServe(db Database, config *ServerConfig) error {
+func ListenAndServe(config ServerConfig) error {
 	return nil
 }
