@@ -1,10 +1,11 @@
 package postdb
 
 import (
-	"encoding/base64"
+	"errors"
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 )
@@ -41,16 +42,23 @@ func New(path string) (ns *NSDB, err error) {
 	return
 }
 
+var nameReg = regexp.MustCompile(`^[a-z0-9\_\-\.]+$`)
+
 func (ns *NSDB) Namespace(name string) (db *DB, err error) {
+	name = strings.ToLower(strings.TrimSpace(name))
 	if name == "public" {
 		return ns.DB, nil
+	}
+
+	if !nameReg.MatchString(name) {
+		return nil, errors.New("invalid name")
 	}
 
 	ns.lock.RLock()
 	db, ok := ns.namespaces[name]
 	ns.lock.RUnlock()
 	if !ok {
-		db, err = Open(path.Join(ns.dbpath, base64.URLEncoding.EncodeToString([]byte(name))+".db"), 0666)
+		db, err = Open(path.Join(ns.dbpath, name+".db"), 0666)
 		if err != nil {
 			return
 		}
