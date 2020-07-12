@@ -82,11 +82,12 @@ if err != nil {
 defer db.Close()
 
 // start the server
-postdb.ListenAndServe(postdb.ServerConfig{
+server := &postdb.Server{
     DB:     db,
     Port:   9000,
     Secret: "PASS",
-})
+}
+server.Serve()
 ```
 
 as client of C/S:
