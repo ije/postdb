@@ -39,7 +39,7 @@ func TestDB(t *testing.T) {
 	}
 	t.Logf("post(%x) added", post.ID)
 
-	posts, err = db.GetPosts(q.Tags("世界"))
+	posts, err = db.GetPosts(q.Owner("admin"), q.Keys("title"))
 	if err != nil {
 		t.Fatal(err)
 	}

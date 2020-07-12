@@ -17,7 +17,7 @@ func TestQuery(t *testing.T) {
 		Status(123),
 		Keys("title", "content"),
 		Tags("hello", "world"),
-		Range(xid.New().String(), 100),
+		Range(xid.New().String(), 1024),
 		Order(DESC),
 	} {
 		res.Apply(q)
@@ -31,7 +31,7 @@ func TestQuery(t *testing.T) {
 	toBe(t, "Tags", strings.Join(res.Tags, " "), "hello world")
 	toBe(t, "Keys", strings.Join(res.Keys, " "), "title content")
 	toBe(t, "Aftar", len(res.Aftar), 12)
-	toBe(t, "Limit", res.Limit, 100)
+	toBe(t, "Limit", res.Limit, 1024)
 	toBe(t, "Order", res.Order, DESC)
 
 	t.Log(res)

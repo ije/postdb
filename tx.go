@@ -73,7 +73,7 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
 		var k, v []byte
 		var post *q.Post
 		if len(res.Aftar) == 12 {
-			k, v = c.Seek(res.Aftar)
+			k, v = c.Seek(res.Aftar.Bytes())
 		} else {
 			k, v = c.First()
 		}
@@ -96,7 +96,7 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
 		var p *q.Post
 		for _, prefix := range prefixs {
 			if len(res.Aftar) == 12 {
-				k, _ = cur.Seek(bytes.Join([][]byte{prefix, res.Aftar}, []byte{0}))
+				k, _ = cur.Seek(bytes.Join([][]byte{prefix, res.Aftar.Bytes()}, []byte{0}))
 			} else {
 				k, _ = cur.Seek(prefix)
 			}
@@ -145,7 +145,7 @@ func (tx *Tx) GetPost(qs ...q.Query) (*q.Post, error) {
 	metaBucket := tx.t.Bucket(postmetaKey)
 	var metaData []byte
 	if len(res.ID) == 12 {
-		metaData = metaBucket.Get(res.ID)
+		metaData = metaBucket.Get(res.ID.Bytes())
 	} else if len(res.Slug) > 0 {
 		slugsBucket := tx.t.Bucket(postindexKey).Bucket(slugsKey)
 		id := slugsBucket.Get([]byte(res.Slug))

@@ -1,12 +1,15 @@
 package q
 
+import (
+	"encoding/binary"
+
+	"github.com/rs/xid"
+)
+
 // A Query inferface
 type Query interface {
 	QueryType() string
 }
-
-// A KV map
-type KV map[string][]byte
 
 type idQuery string
 type slugQuery string
@@ -15,10 +18,7 @@ type ownerQuery string
 type statusQuery uint8
 type tagsQuery []string
 type keysQuery []string
-type rangeQuery struct {
-	after string
-	limit int
-}
+type rangeQuery [15]byte
 type orderQuery uint8
 
 // ID returns a id Query
@@ -47,57 +47,50 @@ func Status(status uint8) Query {
 }
 
 // Tags returns a tags Query
-func Tags(tag string, extra ...string) Query {
-	tags := make(tagsQuery, 1+len(extra))
+func Tags(tags ...string) Query {
+	a := make(tagsQuery, len(tags))
 	i := 0
-	t := toLowerTrim(tag)
-	if t != "" {
-		tags[i] = t
-		i++
-	}
-	for _, s := range extra {
-		t := toLowerTrim(s)
-		if t != "" {
-			tags[i] = t
+	for _, s := range tags {
+		tag := toLowerTrim(s)
+		if tag != "" {
+			a[i] = tag
 			i++
 		}
 	}
-	return tags[:i]
+	return a[:i]
 }
 
 // Keys returns a keys Query
-func Keys(key string, extra ...string) Query {
-	keys := make(keysQuery, 1+len(extra))
+func Keys(keys ...string) Query {
+	a := make(keysQuery, len(keys))
 	i := 0
-	if key != "" {
-		keys[i] = key
-		i++
-	}
-	for _, k := range extra {
-		if k != "" {
-			keys[i] = k
+	for _, s := range keys {
+		tag := toLowerTrim(s)
+		if tag != "" {
+			a[i] = tag
 			i++
 		}
 	}
-	return keys[:i]
+	return a[:i]
 }
 
 // Range returns a range Query
-func Range(after string, limit int) Query {
-	return rangeQuery{
-		after: after,
-		limit: limit,
+func Range(after string, limit uint16) Query {
+	q := rangeQuery{}
+	binary.BigEndian.PutUint16(q[:], limit)
+	if len(after) == 20 {
+		q[2] = 1
+		id, err := xid.FromString(after)
+		if err == nil {
+			copy(q[3:], id.Bytes())
+		}
 	}
+	return q
 }
 
 // Order returns a order Query
 func Order(order uint8) Query {
 	return orderQuery(order)
-}
-
-// QueryType implements the Query interface
-func (kv KV) QueryType() string {
-	return "kv"
 }
 
 // QueryType implements the Query interface

@@ -1,19 +1,21 @@
 package q
 
 import (
+	"encoding/binary"
+
 	"github.com/rs/xid"
 )
 
 // Resolver to resolves query
 type Resolver struct {
-	ID     []byte
+	ID     xid.ID
 	Slug   string
 	Type   string
 	Owner  string
 	Status uint8
 	Tags   []string
 	Keys   []string
-	Aftar  []byte
+	Aftar  xid.ID
 	Limit  int
 	Order  uint8
 }
@@ -25,7 +27,7 @@ func (res *Resolver) Apply(query Query) {
 		if len(q) == 20 {
 			id, err := xid.FromString(string(q))
 			if err == nil {
-				res.ID = id.Bytes()
+				res.ID = id
 			}
 		}
 
@@ -66,13 +68,10 @@ func (res *Resolver) Apply(query Query) {
 		}
 
 	case rangeQuery:
-		if len(q.after) == 20 {
-			id, err := xid.FromString(q.after)
-			if err == nil {
-				res.Aftar = id.Bytes()
-			}
+		res.Limit = int(binary.BigEndian.Uint16(q[:2]))
+		if q[2] == 1 {
+			res.Aftar, _ = xid.FromBytes(q[3:])
 		}
-		res.Limit = q.limit
 
 	case orderQuery:
 		res.Order = uint8(q)
