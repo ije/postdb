@@ -8,14 +8,14 @@ import (
 
 // Resolver to resolves query
 type Resolver struct {
-	ID     xid.ID
+	ID     []byte
 	Slug   string
 	Type   string
 	Owner  string
 	Status uint8
 	Tags   []string
 	Keys   []string
-	Aftar  xid.ID
+	Aftar  []byte
 	Limit  int
 	Order  uint8
 }
@@ -27,7 +27,7 @@ func (res *Resolver) Apply(query Query) {
 		if len(q) == 20 {
 			id, err := xid.FromString(string(q))
 			if err == nil {
-				res.ID = id
+				res.ID = id.Bytes()
 			}
 		}
 
@@ -70,7 +70,7 @@ func (res *Resolver) Apply(query Query) {
 	case rangeQuery:
 		res.Limit = int(binary.BigEndian.Uint16(q[:2]))
 		if q[2] == 1 {
-			res.Aftar, _ = xid.FromBytes(q[3:])
+			res.Aftar = q[3:]
 		}
 
 	case orderQuery:

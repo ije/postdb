@@ -73,7 +73,7 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
 		var k, v []byte
 		var post *q.Post
 		if len(res.Aftar) == 12 {
-			k, v = c.Seek(res.Aftar.Bytes())
+			k, v = c.Seek(res.Aftar)
 		} else {
 			k, v = c.First()
 		}
@@ -96,7 +96,7 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
 		var p *q.Post
 		for _, prefix := range prefixs {
 			if len(res.Aftar) == 12 {
-				k, _ = cur.Seek(bytes.Join([][]byte{prefix, res.Aftar.Bytes()}, []byte{0}))
+				k, _ = cur.Seek(bytes.Join([][]byte{prefix, res.Aftar}, []byte{0}))
 			} else {
 				k, _ = cur.Seek(prefix)
 			}
@@ -144,14 +144,14 @@ func (tx *Tx) GetPost(qs ...q.Query) (*q.Post, error) {
 
 	metaBucket := tx.t.Bucket(postmetaKey)
 	var metaData []byte
-	if len(res.ID) == 12 {
-		metaData = metaBucket.Get(res.ID.Bytes())
-	} else if len(res.Slug) > 0 {
+	if len(res.Slug) > 0 {
 		slugsBucket := tx.t.Bucket(postindexKey).Bucket(slugsKey)
 		id := slugsBucket.Get([]byte(res.Slug))
-		if id != nil {
+		if len(id) == 12 {
 			metaData = metaBucket.Get(id)
 		}
+	} else if len(res.ID) == 12 {
+		metaData = metaBucket.Get(res.ID)
 	}
 	if metaData == nil {
 		return nil, ErrNotFound
@@ -205,6 +205,9 @@ func (tx *Tx) AddPost(qs ...q.Query) (*q.Post, error) {
 
 	if len(post.Slug) > 0 {
 		slugsBucket := indexBucket.Bucket(slugsKey)
+		if slugsBucket.Get([]byte(post.Slug)) != nil {
+			return nil, ErrDuplicateSlug
+		}
 		err = slugsBucket.Put([]byte(post.Slug), post.ID.Bytes())
 		if err != nil {
 			return nil, err

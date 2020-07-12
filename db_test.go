@@ -25,7 +25,7 @@ func TestDB(t *testing.T) {
 
 	post, err := db.AddPost(
 		q.Type("news"),
-		q.Slug("hello-world"),
+		// q.Slug("hello-world"),
 		q.Status(2),
 		q.Owner("admin"),
 		q.Tags("hello", "world", "世界"),
