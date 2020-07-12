@@ -13,7 +13,7 @@ var (
 	errPostMeta = errors.New("bad post meta data")
 )
 
-// A Post specifies a post of postdb
+// A Post specifies a post of postdb.
 type Post struct {
 	ID     []byte
 	Slug   string
@@ -25,7 +25,7 @@ type Post struct {
 	KV     KV
 }
 
-// NewPost returns a new post
+// NewPost returns a new post.
 func NewPost(postType string) *Post {
 	return &Post{
 		ID:     xid.New().Bytes(),
@@ -37,8 +37,8 @@ func NewPost(postType string) *Post {
 	}
 }
 
-// ParsePostMeta parses a post meta data
-func ParsePostMeta(data []byte) (*Post, error) {
+// ParsePost parses a post from bytes.
+func ParsePost(data []byte) (*Post, error) {
 	dl := len(data)
 	if dl < 30 {
 		return nil, errPostMeta
@@ -94,7 +94,7 @@ func ParsePostMeta(data []byte) (*Post, error) {
 	}, nil
 }
 
-// Clone clones the post
+// Clone clones the post.
 func (p *Post) Clone(qs ...Query) *Post {
 	copy := &Post{
 		ID:     p.ID,
@@ -116,8 +116,8 @@ func (p *Post) Clone(qs ...Query) *Post {
 }
 
 // MetaData returns the meta data of post.
-// post meta data structure:
-// 4("POST") | 12(id) | 1(acl) | 8(crtime) | 4(slugLen+typeLen+ownerLen+tagsN) | slugLen(slug) | typeLen(type) | ownerLen(owner) | [1+tagLen]*tagN(tags) | 1(v)
+// data structure:
+// "POST"(4) | id(12) | status(1) | crtime(8) | slugLen(1) | typeLen(1) | ownerLen(1) | tagsN(1) | slug(slugLen) | type(typeLen) | owner(ownerLen) | tags([1+tagLen]*tagN) | checksum(1)
 func (p *Post) MetaData() []byte {
 	slugLen := len(p.Slug)
 	typeLen := len(p.Type)
@@ -162,7 +162,7 @@ func (p *Post) MetaData() []byte {
 	return buf
 }
 
-// ApplyQuery applies query
+// ApplyQuery applies a query.
 func (p *Post) ApplyQuery(query Query) {
 	switch query.QueryType() {
 	case "slug":

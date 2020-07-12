@@ -21,7 +21,7 @@ func TestPostMeta(t *testing.T) {
 	}
 
 	metadata := post.MetaData()
-	_post, err := ParsePostMeta(metadata)
+	_post, err := ParsePost(metadata)
 	if err != nil {
 		t.Fatal(err)
 	}

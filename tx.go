@@ -78,7 +78,7 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
 			k, v = c.First()
 		}
 		for ; len(k) == 12; k, v = c.Next() {
-			post, err = q.ParsePostMeta(v)
+			post, err = q.ParsePost(v)
 			if err != nil {
 				posts = nil
 				return
@@ -104,7 +104,7 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
 				id := k[len(k)-12:]
 				data := metaBucket.Get(id)
 				if data != nil {
-					p, err = q.ParsePostMeta(data)
+					p, err = q.ParsePost(data)
 					if err != nil {
 						posts = nil
 						return
@@ -157,7 +157,7 @@ func (tx *Tx) GetPost(qs ...q.Query) (*q.Post, error) {
 		return nil, ErrNotFound
 	}
 
-	post, err := q.ParsePostMeta(postMetaData)
+	post, err := q.ParsePost(postMetaData)
 	if err != nil {
 		return nil, err
 	}
