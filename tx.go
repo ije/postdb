@@ -22,13 +22,10 @@ func (tx *Tx) PutValue(key string, value []byte) error {
 	return tx.t.Bucket(valuesKey).Put([]byte(key), value)
 }
 
-func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
-	metaBucket := tx.t.Bucket(postmetaKey)
-	indexBucket := tx.t.Bucket(postindexKey)
-	kvBucket := tx.t.Bucket(postkvKey)
-
+func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post) {
 	var cur *bolt.Cursor
 	var prefixs [][]byte
+	var filter func(*q.Post) bool
 	var n int
 
 	var res q.Resolver
@@ -36,22 +33,34 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
 		res.Apply(q)
 	}
 
-	queryTags := len(res.Tags) > 0
 	queryType := len(res.Type) > 0
+	queryTags := len(res.Tags) > 0
 	queryOwner := len(res.Owner) > 0
+	queryAfter := len(res.After) == 12
+	queryKeys := len(res.Keys) == 12
+	orderASC := res.Order >= q.ASC
+
+	metaBucket := tx.t.Bucket(postmetaKey)
+	indexBucket := tx.t.Bucket(postindexKey)
+	kvBucket := tx.t.Bucket(postkvKey)
 
 	if queryTags {
-		cur = indexBucket.Bucket(tagsKey).Cursor()
+		cur = indexBucket.Bucket(tagKey).Cursor()
 		prefixs = make([][]byte, len(res.Tags))
 		for i, tag := range res.Tags {
-			prefix := make([]byte, len(tag)+1)
-			copy(prefix, []byte(tag))
+			p := make([]byte, len(tag)+1)
+			copy(p, []byte(tag))
 			if queryType {
 				keypath := bytes.Join([][]byte{[]byte(tag), []byte(res.Type)}, []byte{0})
-				prefix = make([]byte, len(keypath)+1)
-				copy(prefix, keypath)
+				p = make([]byte, len(keypath)+1)
+				copy(p, keypath)
 			}
-			prefixs[i] = prefix
+			prefixs[i] = p
+		}
+		if queryOwner {
+			filter = func(post *q.Post) bool {
+				return post.Owner == res.Owner
+			}
 		}
 	} else if queryOwner {
 		prefix := make([]byte, len(res.Owner)+1)
@@ -61,68 +70,122 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
 			prefix = make([]byte, len(keypath)+1)
 			copy(prefix, keypath)
 		}
-		cur = indexBucket.Bucket(ownersKey).Cursor()
+		cur = indexBucket.Bucket(ownerKey).Cursor()
 		prefixs = [][]byte{prefix}
 	} else if queryType {
 		prefix := make([]byte, len(res.Type)+1)
 		copy(prefix, []byte(res.Type))
-		cur = indexBucket.Bucket(typesKey).Cursor()
+		cur = indexBucket.Bucket(typeKey).Cursor()
 		prefixs = [][]byte{prefix}
 	} else {
 		c := metaBucket.Cursor()
 		var k, v []byte
-		var post *q.Post
-		if len(res.Aftar) == 12 {
-			k, v = c.Seek(res.Aftar)
+		if queryAfter {
+			k, v = c.Seek(res.After)
 		} else {
-			k, v = c.First()
-		}
-		for ; len(k) == 12; k, v = c.Next() {
-			post, err = q.PostFromBytes(v)
-			if err != nil {
-				posts = nil
-				return
+			if orderASC {
+				k, v = c.First()
+			} else {
+				k, v = c.Last()
 			}
-			posts = append(posts, *post)
-			n++
-			if res.Limit > 0 && n >= res.Limit {
+		}
+		for {
+			if k == nil {
 				break
+			}
+			post, err := q.PostFromBytes(v)
+			if err == nil {
+				posts = append(posts, *post)
+				n++
+				if res.Limit > 0 && n >= res.Limit {
+					break
+				}
+			}
+			if orderASC {
+				k, v = c.Next()
+			} else {
+				k, v = c.Prev()
 			}
 		}
 	}
 
-	if cur != nil && len(prefixs) > 0 {
-		var k []byte
-		var p *q.Post
-		for _, prefix := range prefixs {
-			if len(res.Aftar) == 12 {
-				k, _ = cur.Seek(bytes.Join([][]byte{prefix, res.Aftar}, []byte{0}))
-			} else {
-				k, _ = cur.Seek(prefix)
+	if cur != nil {
+		pl := len(prefixs)
+		a := make([][]*q.Post, pl)
+		for i, prefix := range prefixs {
+			k, _ := cur.Seek(prefix)
+			if k == nil || !bytes.HasPrefix(k, prefix) {
+				break
 			}
-			for ; k != nil && bytes.HasPrefix(k, prefix); k, _ = cur.Next() {
-				id := k[len(k)-12:]
-				data := metaBucket.Get(id)
-				if data != nil {
-					p, err = q.PostFromBytes(data)
-					if err != nil {
-						posts = nil
-						return
-					}
-					if queryTags && queryOwner && p.Owner != res.Owner {
-						continue
-					}
-					posts = append(posts, *p)
-					n++
-					if res.Limit > 0 && n >= res.Limit {
+
+			if orderASC && queryAfter {
+				for {
+					if bytes.Compare(k[len(k)-12:], res.After) <= 0 {
+						k, _ = cur.Next()
+						if k == nil || !bytes.HasPrefix(k, prefix) {
+							break
+						}
+					} else {
 						break
 					}
+				}
+			}
+			if !orderASC {
+				for {
+					k, _ = cur.Next()
+					if k == nil {
+						k, _ = cur.Last()
+						break
+					} else if !bytes.HasPrefix(k, prefix) || (queryAfter && bytes.Compare(k[len(k)-12:], res.After) >= 0) {
+						k, _ = cur.Prev()
+						break
+					}
+				}
+			}
+
+			for {
+				if k == nil || !bytes.HasPrefix(k, prefix) {
+					break
+				}
+				id := k[len(k)-12:]
+				if i == 0 {
+					data := metaBucket.Get(id)
+					if data != nil {
+						post, err := q.PostFromBytes(data)
+						if err == nil && bytes.Compare(post.ID.Bytes(), id) == 0 && (filter == nil || filter(post) == true) {
+							if pl == 1 {
+								posts = append(posts, *post)
+							} else {
+								a[0] = append(a[0], post)
+							}
+
+							n++
+							if res.Limit > 0 && n >= res.Limit {
+								break
+							}
+						}
+					}
+				} else if past := a[i-1]; len(past) > 0 {
+					for _, p := range past {
+						if bytes.Equal(p.ID.Bytes(), id) {
+							if i == pl-1 {
+								posts = append(posts, *p)
+							} else {
+								a[i] = append(a[i], p)
+							}
+						}
+					}
+				}
+				if orderASC {
+					k, _ = cur.Next()
+				} else {
+					k, _ = cur.Prev()
 				}
 			}
 		}
 	}
 
-	if len(res.Keys) > 0 {
+	if queryKeys {
 		for _, post := range posts {
 			postkvBucket := kvBucket.Bucket(post.ID.Bytes())
 			for _, key := range res.Keys {
@@ -133,6 +196,7 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post, err error) {
 			}
 		}
 	}
+
 	return
 }
 
@@ -142,16 +206,15 @@ func (tx *Tx) GetPost(qs ...q.Query) (*q.Post, error) {
 		res.Apply(q)
 	}
 
-	metaBucket := tx.t.Bucket(postmetaKey)
 	var metaData []byte
 	if len(res.Slug) > 0 {
-		slugsBucket := tx.t.Bucket(postindexKey).Bucket(slugsKey)
-		id := slugsBucket.Get([]byte(res.Slug))
+		slugIndexBucket := tx.t.Bucket(postindexKey).Bucket(slugKey)
+		id := slugIndexBucket.Get([]byte(res.Slug))
 		if len(id) == 12 {
-			metaData = metaBucket.Get(id)
+			metaData = tx.t.Bucket(postmetaKey).Get(id)
 		}
 	} else if len(res.ID) == 12 {
-		metaData = metaBucket.Get(res.ID)
+		metaData = tx.t.Bucket(postmetaKey).Get(res.ID)
 	}
 	if metaData == nil {
 		return nil, ErrNotFound
@@ -181,17 +244,13 @@ func (tx *Tx) AddPost(qs ...q.Query) (*q.Post, error) {
 		post.ApplyQuery(q)
 	}
 
-	metaBucket := tx.t.Bucket(postmetaKey)
-	indexBucket := tx.t.Bucket(postindexKey)
-	kvBucket := tx.t.Bucket(postkvKey)
-
-	err := metaBucket.Put(post.ID.Bytes(), post.MetaData())
+	err := tx.t.Bucket(postmetaKey).Put(post.ID.Bytes(), post.MetaData())
 	if err != nil {
 		return nil, err
 	}
 
 	if len(post.KV) > 0 {
-		postkvBucket, err := kvBucket.CreateBucketIfNotExists(post.ID.Bytes())
+		postkvBucket, err := tx.t.Bucket(postkvKey).CreateBucketIfNotExists(post.ID.Bytes())
 		if err != nil {
 			return nil, err
 		}
@@ -203,43 +262,45 @@ func (tx *Tx) AddPost(qs ...q.Query) (*q.Post, error) {
 		}
 	}
 
+	hasType := len(post.Type) > 0
+	indexBucket := tx.t.Bucket(postindexKey)
+
 	if len(post.Slug) > 0 {
-		slugsBucket := indexBucket.Bucket(slugsKey)
-		if slugsBucket.Get([]byte(post.Slug)) != nil {
+		slugIndexBucket := indexBucket.Bucket(slugKey)
+		if slugIndexBucket.Get([]byte(post.Slug)) != nil {
 			return nil, ErrDuplicateSlug
 		}
-		err = slugsBucket.Put([]byte(post.Slug), post.ID.Bytes())
+		err = slugIndexBucket.Put([]byte(post.Slug), post.ID.Bytes())
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	hasType := len(post.Type) > 0
 	if hasType {
-		typesBucket := indexBucket.Bucket(typesKey)
+		typeIndexBucket := indexBucket.Bucket(typeKey)
 		keypath := [][]byte{[]byte(post.Type), post.ID.Bytes()}
-		err = typesBucket.Put(bytes.Join(keypath, []byte{0}), []byte{1})
+		err = typeIndexBucket.Put(bytes.Join(keypath, []byte{0}), []byte{1})
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if len(post.Owner) > 0 {
-		ownersBucket := indexBucket.Bucket(ownersKey)
+		ownerIndexBucket := indexBucket.Bucket(ownerKey)
 		var keypath [][]byte
 		if hasType {
 			keypath = [][]byte{[]byte(post.Owner), []byte(post.Type), post.ID.Bytes()}
 		} else {
 			keypath = [][]byte{[]byte(post.Owner), post.ID.Bytes()}
 		}
-		err = ownersBucket.Put(bytes.Join(keypath, []byte{0}), []byte{1})
+		err = ownerIndexBucket.Put(bytes.Join(keypath, []byte{0}), []byte{1})
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if len(post.Tags) > 0 {
-		tagsBucket := indexBucket.Bucket(tagsKey)
+		tagIndexBucket := indexBucket.Bucket(tagKey)
 		for _, tag := range post.Tags {
 			var keypath [][]byte
 			if hasType {
@@ -247,7 +308,7 @@ func (tx *Tx) AddPost(qs ...q.Query) (*q.Post, error) {
 			} else {
 				keypath = [][]byte{[]byte(tag), post.ID.Bytes()}
 			}
-			err = tagsBucket.Put(bytes.Join(keypath, []byte{0}), []byte{1})
+			err = tagIndexBucket.Put(bytes.Join(keypath, []byte{0}), []byte{1})
 			if err != nil {
 				return nil, err
 			}
@@ -268,7 +329,28 @@ func (tx *Tx) UpdatePost(qs ...q.Query) error {
 		copy.ApplyQuery(q)
 	}
 
-	// todo: update db
+	metaData := post.MetaData()
+	copyMetaData := copy.MetaData()
+	if !bytes.Equal(metaData, copyMetaData) {
+		metaBucket := tx.t.Bucket(postmetaKey)
+		err := metaBucket.Put(copy.ID.Bytes(), copyMetaData)
+		if err != nil {
+			return err
+		}
+
+		// todo: update indexs
+	}
+
+	if len(post.KV) > 0 {
+		postkvBucket := tx.t.Bucket(postkvKey).Bucket(post.ID.Bytes())
+		for k, v := range post.KV {
+			err = postkvBucket.Put([]byte(k), v)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -288,8 +370,8 @@ func (tx *Tx) RemovePost(qs ...q.Query) error {
 	}
 
 	if len(post.Slug) > 0 {
-		slugsBucket := indexBucket.Bucket(slugsKey)
-		err = slugsBucket.Delete([]byte(post.Slug))
+		slugIndexBucket := indexBucket.Bucket(slugKey)
+		err = slugIndexBucket.Delete([]byte(post.Slug))
 		if err != nil {
 			return err
 		}
@@ -297,9 +379,9 @@ func (tx *Tx) RemovePost(qs ...q.Query) error {
 	}
 
 	if len(post.Type) > 0 {
-		typesBucket := indexBucket.Bucket(typesKey)
+		typeIndexBucket := indexBucket.Bucket(typeKey)
 		keypath := [][]byte{[]byte(post.Type), post.ID.Bytes()}
-		err = typesBucket.Delete(bytes.Join(keypath, []byte{0}))
+		err = typeIndexBucket.Delete(bytes.Join(keypath, []byte{0}))
 		if err != nil {
 			return err
 		}
@@ -307,14 +389,14 @@ func (tx *Tx) RemovePost(qs ...q.Query) error {
 	}
 
 	if len(post.Owner) > 0 {
-		ownersBucket := indexBucket.Bucket(ownersKey)
+		ownerIndexBucket := indexBucket.Bucket(ownerKey)
 		var keypath [][]byte
 		if len(post.Type) > 0 {
 			keypath = [][]byte{[]byte(post.Owner), []byte(post.Type), post.ID.Bytes()}
 		} else {
 			keypath = [][]byte{[]byte(post.Owner), post.ID.Bytes()}
 		}
-		err = ownersBucket.Delete(bytes.Join(keypath, []byte{0}))
+		err = ownerIndexBucket.Delete(bytes.Join(keypath, []byte{0}))
 		if err != nil {
 			return err
 		}
@@ -322,7 +404,7 @@ func (tx *Tx) RemovePost(qs ...q.Query) error {
 	}
 
 	if len(post.Tags) > 0 {
-		tagsBucket := indexBucket.Bucket(tagsKey)
+		tagIndexBucket := indexBucket.Bucket(tagKey)
 		for _, tag := range post.Tags {
 			var keypath [][]byte
 			if len(post.Type) > 0 {
@@ -330,7 +412,7 @@ func (tx *Tx) RemovePost(qs ...q.Query) error {
 			} else {
 				keypath = [][]byte{[]byte(tag), post.ID.Bytes()}
 			}
-			err = tagsBucket.Delete(bytes.Join(keypath, []byte{0}))
+			err = tagIndexBucket.Delete(bytes.Join(keypath, []byte{0}))
 			if err != nil {
 				return err
 			}

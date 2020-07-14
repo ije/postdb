@@ -30,7 +30,7 @@ func NewPost() *Post {
 	return &Post{
 		ID:     xid.New(),
 		Status: 1,
-		Crtime: uint64(time.Now().UnixNano() / int64(time.Millisecond)),
+		Crtime: uint64(time.Now().UnixNano() / 1e6),
 		Tags:   []string{},
 		KV:     KV{},
 	}
@@ -179,10 +179,7 @@ func (p *Post) ApplyQuery(query Query) {
 		p.Status = uint8(q)
 
 	case ownerQuery:
-		name := toLowerTrim(string(q))
-		if name != "" {
-			p.Owner = name
-		}
+		p.Owner = toLowerTrim(string(q))
 
 	case tagsQuery:
 		p.Tags = q

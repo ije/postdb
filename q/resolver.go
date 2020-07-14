@@ -15,7 +15,8 @@ type Resolver struct {
 	Status uint8
 	Tags   []string
 	Keys   []string
-	Aftar  []byte
+	After  []byte
+	KV     KV
 	Limit  int
 	Order  uint8
 }
@@ -67,10 +68,20 @@ func (res *Resolver) Apply(query Query) {
 			res.Keys = keys
 		}
 
+	case KV:
+		if res.KV == nil {
+			res.KV = KV{}
+		}
+		for k, v := range q {
+			if len(k) > 0 {
+				res.KV[k] = v
+			}
+		}
+
 	case rangeQuery:
 		res.Limit = int(binary.BigEndian.Uint16(q[:2]))
 		if q[2] == 1 {
-			res.Aftar = q[3:]
+			res.After = q[3:]
 		}
 
 	case orderQuery:

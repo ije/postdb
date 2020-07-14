@@ -37,10 +37,10 @@ func Open(path string, mode os.FileMode) (db *DB, err error) {
 		}
 		indexBucket := tx.Bucket(postindexKey)
 		for _, key := range [][]byte{
-			slugsKey,
-			typesKey,
-			ownersKey,
-			tagsKey,
+			slugKey,
+			typeKey,
+			ownerKey,
+			tagKey,
 		} {
 			_, err := indexBucket.CreateBucketIfNotExists(key)
 			if err != nil {
@@ -111,7 +111,7 @@ func (db *DB) GetPosts(qs ...q.Query) ([]q.Post, error) {
 	}
 	defer tx.Rollback()
 
-	return tx.GetPosts(qs...)
+	return tx.GetPosts(qs...), nil
 }
 
 func (db *DB) AddPost(qs ...q.Query) (*q.Post, error) {

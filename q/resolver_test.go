@@ -16,6 +16,7 @@ func TestQuery(t *testing.T) {
 		Owner("admin"),
 		Status(123),
 		Keys("title", "content"),
+		KV{"title": []byte("Hello World")},
 		Tags("hello", "world"),
 		Range(xid.New().String(), 1024),
 		Order(DESC),
@@ -30,6 +31,7 @@ func TestQuery(t *testing.T) {
 	toBe(t, "Status", res.Status, uint8(123))
 	toBe(t, "Tags", strings.Join(res.Tags, " "), "hello world")
 	toBe(t, "Keys", strings.Join(res.Keys, " "), "title content")
+	toBe(t, "Keys.title", string(res.KV["title"]), "Hello World")
 	toBe(t, "Aftar", len(res.Aftar), 12)
 	toBe(t, "Limit", res.Limit, 1024)
 	toBe(t, "Order", res.Order, DESC)
