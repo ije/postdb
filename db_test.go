@@ -26,7 +26,7 @@ func TestDB(t *testing.T) {
 		q.Slug(fmt.Sprintf("hello-world-%d", len(posts))),
 		q.Status(2),
 		q.Owner("admin"),
-		q.Tags("hello", "world", "世界", "你好"),
+		q.Tags("hello", "world", "世界"),
 		q.KV{
 			"title": []byte(fmt.Sprintf("Hello World #%d", len(posts))),
 			"date":  []byte(time.Now().Format(http.TimeFormat)),
@@ -35,11 +35,13 @@ func TestDB(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("post(%s,%s) added", post.ID, post.Slug)
+	t.Logf("post(%s/%s) added", post.ID, post.Slug)
 
-	posts, err = db.GetPosts(q.Tags("世界"), q.Keys("title"), q.Order(q.ASC), q.Range("bs6pmhh8d3b520r8c05g", 6))
+	posts, err = db.GetPosts(q.Tags("世界"), q.Order(q.ASC), q.Range("", 3), q.Keys("title"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log("posts by tag(世界): ", len(posts))
+	for i, post := range posts {
+		t.Logf(`%d. %s/%s "%s"`, i+1, post.ID, post.Slug, string(post.KV.Get("title")))
+	}
 }

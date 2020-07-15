@@ -37,7 +37,7 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post) {
 	queryTags := len(res.Tags) > 0
 	queryOwner := len(res.Owner) > 0
 	queryAfter := len(res.After) == 12
-	queryKeys := len(res.Keys) == 12
+	queryKeys := len(res.Keys) > 0
 	orderASC := res.Order >= q.ASC
 
 	metaBucket := tx.t.Bucket(postmetaKey)
