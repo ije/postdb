@@ -3,14 +3,12 @@ package q
 import (
 	"strings"
 	"testing"
-
-	"github.com/rs/xid"
 )
 
 func TestQuery(t *testing.T) {
 	var res Resolver
 	for _, q := range []Query{
-		ID(xid.New().String()),
+		ID(NewID().String()),
 		Slug("hello-world"),
 		Type("news"),
 		Owner("admin"),
@@ -18,7 +16,7 @@ func TestQuery(t *testing.T) {
 		Keys("title", "content"),
 		KV{"title": []byte("Hello World")},
 		Tags("hello", "world"),
-		Range(xid.New().String(), 1024),
+		Range(NewID().String(), 1024),
 		Order(DESC),
 	} {
 		res.Apply(q)
@@ -32,7 +30,7 @@ func TestQuery(t *testing.T) {
 	toBe(t, "Tags", strings.Join(res.Tags, " "), "hello world")
 	toBe(t, "Keys", strings.Join(res.Keys, " "), "title content")
 	toBe(t, "Keys.title", string(res.KV["title"]), "Hello World")
-	toBe(t, "Aftar", len(res.Aftar), 12)
+	toBe(t, "Aftar", len(res.After), 12)
 	toBe(t, "Limit", res.Limit, 1024)
 	toBe(t, "Order", res.Order, DESC)
 

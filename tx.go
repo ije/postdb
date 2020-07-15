@@ -207,14 +207,14 @@ func (tx *Tx) GetPost(qs ...q.Query) (*q.Post, error) {
 	}
 
 	var metaData []byte
-	if len(res.Slug) > 0 {
+	if len(res.ID) == 12 {
+		metaData = tx.t.Bucket(postmetaKey).Get(res.ID)
+	} else if len(res.Slug) > 0 {
 		slugIndexBucket := tx.t.Bucket(postindexKey).Bucket(slugKey)
 		id := slugIndexBucket.Get([]byte(res.Slug))
 		if len(id) == 12 {
 			metaData = tx.t.Bucket(postmetaKey).Get(id)
 		}
-	} else if len(res.ID) == 12 {
-		metaData = tx.t.Bucket(postmetaKey).Get(res.ID)
 	}
 	if metaData == nil {
 		return nil, ErrNotFound

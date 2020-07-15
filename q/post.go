@@ -4,8 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"time"
-
-	"github.com/rs/xid"
 )
 
 var (
@@ -15,7 +13,7 @@ var (
 
 // A Post specifies a post of postdb.
 type Post struct {
-	ID     xid.ID
+	ID     ObjectID
 	Slug   string
 	Type   string
 	Status uint8
@@ -28,7 +26,7 @@ type Post struct {
 // NewPost returns a new post.
 func NewPost() *Post {
 	return &Post{
-		ID:     xid.New(),
+		ID:     NewID(),
 		Status: 1,
 		Crtime: uint64(time.Now().UnixNano() / 1e6),
 		Tags:   []string{},
@@ -57,10 +55,8 @@ func PostFromBytes(data []byte) (*Post, error) {
 		return nil, errPostMeta
 	}
 
-	id, err := xid.FromBytes(data[4:16])
-	if err != nil {
-		return nil, errPostMeta
-	}
+	var id ObjectID
+	copy(id[:], data[4:16])
 
 	status := data[16]
 	crtime := binary.BigEndian.Uint64(data[17:25])

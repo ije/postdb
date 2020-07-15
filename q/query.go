@@ -11,7 +11,6 @@ type Query interface {
 	QueryType() string
 }
 
-type idQuery string
 type slugQuery string
 type typeQuery string
 type ownerQuery string
@@ -20,11 +19,6 @@ type tagsQuery []string
 type keysQuery []string
 type rangeQuery [15]byte
 type orderQuery uint8
-
-// ID returns a id Query
-func ID(id string) Query {
-	return idQuery(id)
-}
 
 // Slug returns a slug Query
 func Slug(slug string) Query {
@@ -91,11 +85,6 @@ func Range(after string, limit uint16) Query {
 // Order returns a order Query
 func Order(order uint8) Query {
 	return orderQuery(order)
-}
-
-// QueryType implements the Query interface
-func (q idQuery) QueryType() string {
-	return "id"
 }
 
 // QueryType implements the Query interface

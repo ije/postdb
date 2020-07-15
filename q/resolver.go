@@ -2,8 +2,6 @@ package q
 
 import (
 	"encoding/binary"
-
-	"github.com/rs/xid"
 )
 
 // Resolver to resolves query
@@ -24,12 +22,9 @@ type Resolver struct {
 // Apply applies a query
 func (res *Resolver) Apply(query Query) {
 	switch q := query.(type) {
-	case idQuery:
-		if len(q) == 20 {
-			id, err := xid.FromString(string(q))
-			if err == nil {
-				res.ID = id.Bytes()
-			}
+	case ObjectID:
+		if !q.IsNil() {
+			res.ID = q.Bytes()
 		}
 
 	case slugQuery:
