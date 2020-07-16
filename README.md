@@ -33,7 +33,7 @@ db.PutValue("k", []byte("v"))
 db.GetPosts()
 
 // get posts with query
-db.GetPosts(q.Type("type"), q.Tags("tag"), q.Range("", 100), q.Order(q.DESC))
+db.GetPosts(q.Type("type"), q.Tags("tag"), q.Limit(100), q.Order(q.DESC))
 
 // get post by id without kv
 db.GetPost(q.ID("id"))
@@ -68,7 +68,10 @@ db.GetPosts()
 ...
 
 // create namespace database
-ns := db.Namespace("name")
+ns, err := db.Namespace("name")
+if err != nil {
+    return err
+}
 
 // use namespace database
 ns.GetPosts()
