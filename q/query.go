@@ -17,7 +17,8 @@ type ownerQuery string
 type statusQuery uint8
 type tagsQuery []string
 type keysQuery []string
-type rangeQuery [15]byte
+type rangeQuery [17]byte
+type limitQuery uint32
 type orderQuery uint8
 
 // Slug returns a slug Query
@@ -69,14 +70,14 @@ func Keys(keys ...string) Query {
 }
 
 // Range returns a range Query
-func Range(after string, limit uint16) Query {
-	q := rangeQuery{}
-	binary.BigEndian.PutUint16(q[:], limit)
+func Range(after string, limit uint32) Query {
+	var q rangeQuery
 	if len(after) == 20 {
-		q[2] = 1
+		q[0] = 1
 		id, err := xid.FromString(after)
 		if err == nil {
-			copy(q[3:], id.Bytes())
+			copy(q[1:], id.Bytes())
+			binary.BigEndian.PutUint32(q[13:], limit)
 		}
 	}
 	return q

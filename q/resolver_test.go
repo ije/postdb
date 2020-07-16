@@ -31,7 +31,7 @@ func TestQuery(t *testing.T) {
 	toBe(t, "Keys", strings.Join(res.Keys, " "), "title content")
 	toBe(t, "Keys.title", string(res.KV["title"]), "Hello World")
 	toBe(t, "Aftar", len(res.After), 12)
-	toBe(t, "Limit", res.Limit, 1024)
+	toBe(t, "Limit", res.Limit, uint32(1024))
 	toBe(t, "Order", res.Order, DESC)
 
 	t.Log(res)

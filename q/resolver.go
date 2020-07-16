@@ -15,7 +15,7 @@ type Resolver struct {
 	Keys   []string
 	After  []byte
 	KV     KV
-	Limit  int
+	Limit  uint32
 	Order  uint8
 }
 
@@ -74,9 +74,9 @@ func (res *Resolver) Apply(query Query) {
 		}
 
 	case rangeQuery:
-		res.Limit = int(binary.BigEndian.Uint16(q[:2]))
-		if q[2] == 1 {
-			res.After = q[3:]
+		if q[0] == 1 {
+			res.After = q[1:13]
+			res.Limit = binary.BigEndian.Uint32(q[13:])
 		}
 
 	case orderQuery:
