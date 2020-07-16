@@ -37,7 +37,6 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post) {
 	queryTags := len(res.Tags) > 0
 	queryOwner := len(res.Owner) > 0
 	queryAfter := len(res.After) == 12
-	queryKeys := len(res.Keys) > 0
 	orderASC := res.Order >= q.ASC
 
 	metaBucket := tx.t.Bucket(postmetaKey)
@@ -185,14 +184,21 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post) {
 		}
 	}
 
-	if queryKeys {
+	if len(res.Keys) > 0 {
 		for _, post := range posts {
 			postkvBucket := kvBucket.Bucket(post.ID.Bytes())
-			if postkvKey != nil {
-				for _, key := range res.Keys {
-					v := postkvBucket.Get([]byte(key))
-					if v != nil {
-						post.KV[key] = v
+			if postkvBucket != nil {
+				if res.KeysAll {
+					c := postkvBucket.Cursor()
+					for k, v := c.First(); k != nil; k, v = c.Next() {
+						post.KV[string(k)] = v
+					}
+				} else {
+					for _, key := range res.Keys {
+						v := postkvBucket.Get([]byte(key))
+						if v != nil {
+							post.KV[key] = v
+						}
 					}
 				}
 			}
@@ -228,11 +234,20 @@ func (tx *Tx) GetPost(qs ...q.Query) (*q.Post, error) {
 	}
 
 	if len(res.Keys) > 0 {
-		kvBucket := tx.t.Bucket(postkvKey).Bucket(post.ID.Bytes())
-		for _, key := range res.Keys {
-			v := kvBucket.Get([]byte(key))
-			if v != nil {
-				post.KV[key] = v
+		postkvBucket := tx.t.Bucket(postkvKey).Bucket(post.ID.Bytes())
+		if postkvBucket != nil {
+			if res.KeysAll {
+				c := postkvBucket.Cursor()
+				for k, v := c.First(); k != nil; k, v = c.Next() {
+					post.KV[string(k)] = v
+				}
+			} else {
+				for _, key := range res.Keys {
+					v := postkvBucket.Get([]byte(key))
+					if v != nil {
+						post.KV[key] = v
+					}
+				}
 			}
 		}
 	}
@@ -251,11 +266,12 @@ func (tx *Tx) AddPost(qs ...q.Query) (*q.Post, error) {
 		return nil, err
 	}
 
+	postkvBucket, err := tx.t.Bucket(postkvKey).CreateBucketIfNotExists(post.ID.Bytes())
+	if err != nil {
+		return nil, err
+	}
+
 	if len(post.KV) > 0 {
-		postkvBucket, err := tx.t.Bucket(postkvKey).CreateBucketIfNotExists(post.ID.Bytes())
-		if err != nil {
-			return nil, err
-		}
 		for k, v := range post.KV {
 			err = postkvBucket.Put([]byte(k), v)
 			if err != nil {

@@ -37,17 +37,17 @@ func TestDB(t *testing.T) {
 	}
 	t.Logf("post(%s/%s) added", post.ID, post.Slug)
 
-	post, err = db.GetPost(q.ID(post.ID.String()), q.Keys("title"))
+	post, err = db.GetPost(q.ID(post.ID.String()), q.Keys("*"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Logf("restore post(%s/%s): %s", post.ID, post.Slug, string(post.KV.Get("title")))
 
-	posts, err = db.GetPosts(q.Tags("世界"), q.Order(q.ASC), q.Limit(5), q.Keys("title"))
+	posts, err = db.GetPosts(q.Tags("世界"), q.Order(q.ASC), q.Limit(5), q.Keys("*"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	for i, post := range posts {
-		t.Logf(`%d. %s/%s "%s"`, i+1, post.ID, post.Slug, string(post.KV.Get("title")))
+		t.Logf(`%d. %s/%s "%s" %s`, i+1, post.ID, post.Slug, string(post.KV.Get("title")), string(post.KV.Get("date")))
 	}
 }

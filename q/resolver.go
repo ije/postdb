@@ -2,21 +2,23 @@ package q
 
 import (
 	"encoding/binary"
+	"sort"
 )
 
 // Resolver to resolves query
 type Resolver struct {
-	ID     []byte
-	Slug   string
-	Type   string
-	Owner  string
-	Status uint8
-	Tags   []string
-	Keys   []string
-	After  []byte
-	KV     KV
-	Limit  uint32
-	Order  uint8
+	ID      []byte
+	Slug    string
+	Type    string
+	Owner   string
+	Status  uint8
+	Tags    []string
+	Keys    []string
+	KeysAll bool
+	KV      KV
+	After   []byte
+	Limit   uint32
+	Order   uint8
 }
 
 // Apply applies a query
@@ -43,11 +45,14 @@ func (res *Resolver) Apply(query Query) {
 		l := len(q)
 		if l > 0 {
 			n := len(res.Tags)
-			tags := make([]string, n+l)
-			if n > 0 {
-				copy(tags, res.Tags)
+			tags := make(sort.StringSlice, n+l)
+			for i, t := range q {
+				tags[i] = t
 			}
-			copy(tags[n:], q)
+			if n > 0 {
+				copy(tags[l:], res.Tags)
+			}
+			tags.Sort()
 			res.Tags = tags
 		}
 
@@ -55,11 +60,17 @@ func (res *Resolver) Apply(query Query) {
 		l := len(q)
 		if l > 0 {
 			n := len(res.Keys)
-			keys := make([]string, n+l)
-			if n > 0 {
-				copy(keys, res.Keys)
+			keys := make(sort.StringSlice, n+l)
+			for i, k := range q {
+				if k == "*" {
+					res.KeysAll = true
+				}
+				keys[i] = k
 			}
-			copy(keys[n:], q)
+			if n > 0 {
+				copy(keys[l:], res.Keys)
+			}
+			keys.Sort()
 			res.Keys = keys
 		}
 

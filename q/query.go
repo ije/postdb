@@ -2,6 +2,7 @@ package q
 
 import (
 	"encoding/binary"
+	"strings"
 
 	"github.com/rs/xid"
 )
@@ -44,7 +45,7 @@ func Status(status uint8) Query {
 
 // Tags returns a tags Query
 func Tags(tags ...string) Query {
-	a := make(tagsQuery, len(tags))
+	a := make([]string, len(tags))
 	i := 0
 	for _, s := range tags {
 		tag := toLowerTrim(s)
@@ -53,21 +54,21 @@ func Tags(tags ...string) Query {
 			i++
 		}
 	}
-	return a[:i]
+	return tagsQuery(a[:i])
 }
 
 // Keys returns a keys Query
 func Keys(keys ...string) Query {
-	a := make(keysQuery, len(keys))
+	a := make([]string, len(keys))
 	i := 0
 	for _, s := range keys {
-		tag := toLowerTrim(s)
+		tag := strings.TrimSpace(s)
 		if tag != "" {
 			a[i] = tag
 			i++
 		}
 	}
-	return a[:i]
+	return keysQuery(a[:i])
 }
 
 // After returns a after Query
