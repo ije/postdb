@@ -79,6 +79,14 @@ func (res *Resolver) Apply(query Query) {
 			res.Limit = binary.BigEndian.Uint32(q[13:])
 		}
 
+	case afterQuery:
+		if q[0] == 1 {
+			res.After = q[1:]
+		}
+
+	case limitQuery:
+		res.Limit = uint32(q)
+
 	case orderQuery:
 		res.Order = uint8(q)
 	}

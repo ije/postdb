@@ -17,8 +17,9 @@ type ownerQuery string
 type statusQuery uint8
 type tagsQuery []string
 type keysQuery []string
-type rangeQuery [17]byte
+type afterQuery [13]byte
 type limitQuery uint32
+type rangeQuery [17]byte
 type orderQuery uint8
 
 // Slug returns a slug Query
@@ -69,13 +70,33 @@ func Keys(keys ...string) Query {
 	return a[:i]
 }
 
-// Range returns a range Query
+// After returns a after Query
+func After(id string) Query {
+	var q afterQuery
+	if len(id) == 20 {
+		xid, err := xid.FromString(id)
+		if err == nil {
+			q[0] = 1
+			copy(q[1:], xid.Bytes())
+		}
+	}
+	return q
+}
+
+// Limit returns a limit Query
+func Limit(limit uint8) Query {
+	return limitQuery(limit)
+}
+
+// Range returns a range Query.
+//
+// `postdb.GetPosts(q.Range("bs7pobh8d3b21ducpaqg", 100))`  equals `postdb.GetPosts(q.After("bs7pobh8d3b21ducpaqg"), q.Limit(100))`
 func Range(after string, limit uint32) Query {
 	var q rangeQuery
-	if len(after) == 20 {
-		q[0] = 1
+	if len(after) == 20 && limit > 0 {
 		id, err := xid.FromString(after)
 		if err == nil {
+			q[0] = 1
 			copy(q[1:], id.Bytes())
 			binary.BigEndian.PutUint32(q[13:], limit)
 		}
@@ -121,6 +142,16 @@ func (q keysQuery) QueryType() string {
 // QueryType implements the Query interface
 func (q rangeQuery) QueryType() string {
 	return "range"
+}
+
+// QueryType implements the Query interface
+func (q afterQuery) QueryType() string {
+	return "after"
+}
+
+// QueryType implements the Query interface
+func (q limitQuery) QueryType() string {
+	return "limit"
 }
 
 // QueryType implements the Query interface

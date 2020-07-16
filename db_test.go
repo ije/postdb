@@ -43,7 +43,7 @@ func TestDB(t *testing.T) {
 	}
 	t.Logf("restore post(%s/%s): %s", post.ID, post.Slug, string(post.KV.Get("title")))
 
-	posts, err = db.GetPosts(q.Tags("世界"), q.Order(q.ASC), q.Range("", 5), q.Keys("title"))
+	posts, err = db.GetPosts(q.Tags("世界"), q.Order(q.ASC), q.Limit(5), q.Keys("title"))
 	if err != nil {
 		t.Fatal(err)
 	}

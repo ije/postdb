@@ -26,7 +26,7 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post) {
 	var cur *bolt.Cursor
 	var prefixs [][]byte
 	var filter func(*q.Post) bool
-	var n int
+	var n uint32
 
 	var res q.Resolver
 	for _, q := range qs {
@@ -188,10 +188,12 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post) {
 	if queryKeys {
 		for _, post := range posts {
 			postkvBucket := kvBucket.Bucket(post.ID.Bytes())
-			for _, key := range res.Keys {
-				v := postkvBucket.Get([]byte(key))
-				if v != nil {
-					post.KV[key] = v
+			if postkvKey != nil {
+				for _, key := range res.Keys {
+					v := postkvBucket.Get([]byte(key))
+					if v != nil {
+						post.KV[key] = v
+					}
 				}
 			}
 		}
