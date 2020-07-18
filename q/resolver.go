@@ -2,23 +2,22 @@ package q
 
 import (
 	"encoding/binary"
-	"sort"
 )
 
 // Resolver to resolves query
 type Resolver struct {
-	ID      []byte
-	Slug    string
-	Type    string
-	Owner   string
-	Status  uint8
-	Tags    []string
-	Keys    []string
-	KeysAll bool
-	KV      KV
-	After   []byte
-	Limit   uint32
-	Order   uint8
+	ID          []byte
+	Slug        string
+	Type        string
+	Owner       string
+	Status      uint8
+	Tags        []string
+	Keys        []string
+	WildcardKey bool
+	KV          KV
+	After       []byte
+	Limit       uint32
+	Order       uint8
 }
 
 // Apply applies a query
@@ -44,34 +43,46 @@ func (res *Resolver) Apply(query Query) {
 	case tagsQuery:
 		l := len(q)
 		if l > 0 {
+			set := map[string]struct{}{}
 			n := len(res.Tags)
-			tags := make(sort.StringSlice, n+l)
-			for i, t := range q {
-				tags[i] = t
+			a := make([]string, n+l)
+			for i, s := range res.Tags {
+				set[s] = struct{}{}
+				a[i] = s
 			}
-			if n > 0 {
-				copy(tags[l:], res.Tags)
+			for _, s := range q {
+				_, ok := set[s]
+				if !ok {
+					set[s] = struct{}{}
+					a[n] = s
+					n++
+				}
 			}
-			tags.Sort()
-			res.Tags = tags
+			res.Tags = a[:n]
 		}
 
 	case keysQuery:
 		l := len(q)
 		if l > 0 {
+			set := map[string]struct{}{}
 			n := len(res.Keys)
-			keys := make(sort.StringSlice, n+l)
-			for i, k := range q {
-				if k == "*" {
-					res.KeysAll = true
+			a := make([]string, n+l)
+			for i, s := range res.Keys {
+				set[s] = struct{}{}
+				a[i] = s
+			}
+			for _, s := range q {
+				if s == "*" {
+					res.WildcardKey = true
 				}
-				keys[i] = k
+				_, ok := set[s]
+				if !ok {
+					set[s] = struct{}{}
+					a[n] = s
+					n++
+				}
 			}
-			if n > 0 {
-				copy(keys[l:], res.Keys)
-			}
-			keys.Sort()
-			res.Keys = keys
+			res.Keys = a[:n]
 		}
 
 	case KV:

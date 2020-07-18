@@ -45,13 +45,18 @@ func Status(status uint8) Query {
 
 // Tags returns a tags Query
 func Tags(tags ...string) Query {
+	set := map[string]struct{}{}
 	a := make([]string, len(tags))
 	i := 0
 	for _, s := range tags {
 		tag := toLowerTrim(s)
 		if tag != "" {
-			a[i] = tag
-			i++
+			_, ok := set[tag]
+			if !ok {
+				set[tag] = struct{}{}
+				a[i] = tag
+				i++
+			}
 		}
 	}
 	return tagsQuery(a[:i])
@@ -59,13 +64,18 @@ func Tags(tags ...string) Query {
 
 // Keys returns a keys Query
 func Keys(keys ...string) Query {
+	set := map[string]struct{}{}
 	a := make([]string, len(keys))
 	i := 0
 	for _, s := range keys {
-		tag := strings.TrimSpace(s)
-		if tag != "" {
-			a[i] = tag
-			i++
+		key := strings.TrimSpace(s)
+		if key != "" {
+			_, ok := set[key]
+			if !ok {
+				set[key] = struct{}{}
+				a[i] = key
+				i++
+			}
 		}
 	}
 	return keysQuery(a[:i])

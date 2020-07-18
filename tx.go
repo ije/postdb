@@ -188,7 +188,7 @@ func (tx *Tx) GetPosts(qs ...q.Query) (posts []q.Post) {
 		for _, post := range posts {
 			postkvBucket := kvBucket.Bucket(post.ID.Bytes())
 			if postkvBucket != nil {
-				if res.KeysAll {
+				if res.WildcardKey {
 					c := postkvBucket.Cursor()
 					for k, v := c.First(); k != nil; k, v = c.Next() {
 						post.KV[string(k)] = v
@@ -236,7 +236,7 @@ func (tx *Tx) GetPost(qs ...q.Query) (*q.Post, error) {
 	if len(res.Keys) > 0 {
 		postkvBucket := tx.t.Bucket(postkvKey).Bucket(post.ID.Bytes())
 		if postkvBucket != nil {
-			if res.KeysAll {
+			if res.WildcardKey {
 				c := postkvBucket.Cursor()
 				for k, v := c.First(); k != nil; k, v = c.Next() {
 					post.KV[string(k)] = v
