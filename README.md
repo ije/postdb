@@ -33,19 +33,22 @@ db.PutValue("k", []byte("v"))
 db.GetPosts()
 
 // get posts with query
-db.GetPosts(q.Type("type"), q.Tags("tag"), q.Limit(100), q.Order(q.DESC))
+db.GetPosts(q.Type("type"), q.Tags("tag"), q.Limit(100), q.Order(q.DESC), q.Keys("title", "thumb"))
 
 // get post by id without kv
 db.GetPost(q.ID("id"))
 
-// get post by id with kv
-db.GetPost(q.ID("id"), q.Keys{"title", "thumb", "content"))
+// get post by id with specified kv
+db.GetPost(q.ID("id"), q.Keys("title", "content"))
+
+// get post by id with full kv
+db.GetPost(q.ID("id"), q.Keys("*")))
 
 // add a new post
-db.AddPost(q.Type("type"), q.Slug("slug"), q.Tags("tag"), q.KV{"k": []byte("v")})
+db.AddPost(q.Type("type"), q.Slug("slug"), q.Tags("tag1", "tag2"), q.KV{"k": []byte("v1")})
 
 // update the existing post
-db.UpdatePost(q.ID("id"),  q.Tags("tagA", "tagB"), q.KV{"k": []byte("v")})
+db.UpdatePost(q.ID("id"), q.KV{"k": []byte("v2")})
 
 // remove the existing post permanently
 db.RemovePost(q.ID("id"))
@@ -67,13 +70,13 @@ defer db.Close()
 db.GetPosts()
 ...
 
-// create namespace database
+// opening the namespace database
 ns, err := db.Namespace("name")
 if err != nil {
     return err
 }
 
-// use namespace database
+// use the namespace database
 ns.GetPosts()
 ...
 ```
@@ -110,10 +113,11 @@ if err != nil {
     return err
 }
 
-// use database
+// use the database
 db.GetPosts()
 ...
 ```
+
 
 #   
 
