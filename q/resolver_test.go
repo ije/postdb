@@ -15,7 +15,7 @@ func TestQuery(t *testing.T) {
 		Status(123),
 		Tags("hello", "world"),
 		Tags("world", "世界"),
-		Keys("title", "content", "*", "content"),
+		K("title", "content", "*", "content"),
 		KV{"title": []byte("Hello World")},
 		After(afterID.String()),
 		Limit(100),

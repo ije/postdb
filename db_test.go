@@ -76,7 +76,7 @@ func TestDB(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	postZh, err = db.Get(postZh.ID, q.Keys("*"))
+	postZh, err = db.Get(postZh.ID, q.K("*"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +88,7 @@ func TestDB(t *testing.T) {
 	toBe(t, "postZh.KV.date", strings.HasSuffix(string(postZh.KV["date"]), ":)"), true)
 	toBe(t, "postZh.KV.k", string(postZh.KV["k"]), "v2")
 
-	posts, err = db.List(q.Tags("world"), q.Limit(5), q.Order(q.ASC), q.Keys("*"))
+	posts, err = db.List(q.Tags("world"), q.Limit(5), q.Order(q.ASC), q.K("*"))
 	if err != nil {
 		t.Fatal(err)
 	}
