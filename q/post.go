@@ -14,8 +14,7 @@ var (
 // A Post specifies a post of postdb.
 type Post struct {
 	ID     ObjectID
-	Slug   string
-	Type   string
+	Alias  string
 	Status uint8
 	Owner  string
 	Crtime uint64
@@ -37,7 +36,7 @@ func NewPost() *Post {
 // PostFromBytes parses a post from bytes.
 func PostFromBytes(data []byte) (*Post, error) {
 	dl := len(data)
-	if dl < 30 {
+	if dl < 29 {
 		return nil, errPostMeta
 	}
 
@@ -60,15 +59,12 @@ func PostFromBytes(data []byte) (*Post, error) {
 
 	status := data[16]
 	crtime := binary.BigEndian.Uint64(data[17:25])
-	slugLen := int(data[25])
-	typeLen := int(data[26])
-	ownerLen := int(data[27])
-	tagN := int(data[28])
-	i := 29
-	slug := data[i : i+slugLen]
-	i += slugLen
-	postType := data[i : i+typeLen]
-	i += typeLen
+	aliasLen := int(data[25])
+	ownerLen := int(data[26])
+	tagN := int(data[27])
+	i := 28
+	alias := data[i : i+aliasLen]
+	i += aliasLen
 	owner := data[i : i+ownerLen]
 	i += ownerLen
 	tags := make([]string, tagN)
@@ -84,8 +80,7 @@ func PostFromBytes(data []byte) (*Post, error) {
 
 	return &Post{
 		ID:     id,
-		Slug:   string(slug),
-		Type:   string(postType),
+		Alias:  string(alias),
 		Owner:  string(owner),
 		Status: uint8(status),
 		Crtime: crtime,
@@ -98,8 +93,7 @@ func PostFromBytes(data []byte) (*Post, error) {
 func (p *Post) Clone(qs ...Query) *Post {
 	copy := &Post{
 		ID:     p.ID,
-		Type:   p.Type,
-		Slug:   p.Slug,
+		Alias:  p.Alias,
 		Owner:  p.Owner,
 		Status: p.Status,
 		Crtime: p.Crtime,
@@ -117,12 +111,11 @@ func (p *Post) Clone(qs ...Query) *Post {
 
 // MetaData returns the meta data of post.
 // data structure:
-// "POST"(4) | id(12) | status(1) | crtime(8) | slugLen(1) | typeLen(1) | ownerLen(1) | tagsN(1) | slug(slugLen) | type(typeLen) | owner(ownerLen) | tags([1+tagLen]*tagN) | checksum(1)
+// "POST"(4) | id(12) | status(1) | crtime(8) | aliasLen(1) | ownerLen(1) | tagsN(1) | alias(aliasLen) | owner(ownerLen) | tags([1+tagLen]*tagN) | checksum(1)
 func (p *Post) MetaData() []byte {
-	slugLen := len(p.Slug)
-	typeLen := len(p.Type)
+	aliasLen := len(p.Alias)
 	ownerLen := len(p.Owner)
-	metaLen := 30 + slugLen + typeLen + ownerLen
+	metaLen := 29 + aliasLen + ownerLen
 	for _, tag := range p.Tags {
 		metaLen += 1 + len(tag)
 	}
@@ -131,18 +124,13 @@ func (p *Post) MetaData() []byte {
 	copy(buf[4:], p.ID.Bytes())
 	buf[16] = byte(p.Status)
 	binary.BigEndian.PutUint64(buf[17:], p.Crtime)
-	buf[25] = byte(slugLen)
-	buf[26] = byte(typeLen)
-	buf[27] = byte(ownerLen)
-	buf[28] = byte(len(p.Tags))
-	i := 29
-	if slugLen > 0 {
-		copy(buf[i:], []byte(p.Slug))
-		i += slugLen
-	}
-	if typeLen > 0 {
-		copy(buf[i:], []byte(p.Type))
-		i += typeLen
+	buf[25] = byte(aliasLen)
+	buf[26] = byte(ownerLen)
+	buf[27] = byte(len(p.Tags))
+	i := 28
+	if aliasLen > 0 {
+		copy(buf[i:], []byte(p.Alias))
+		i += aliasLen
 	}
 	if ownerLen > 0 {
 		copy(buf[i:], []byte(p.Owner))
@@ -165,11 +153,8 @@ func (p *Post) MetaData() []byte {
 // ApplyQuery applies a query.
 func (p *Post) ApplyQuery(query Query) {
 	switch q := query.(type) {
-	case slugQuery:
-		p.Slug = string(q)
-
-	case typeQuery:
-		p.Type = string(q)
+	case aliasQuery:
+		p.Alias = string(q)
 
 	case ownerQuery:
 		p.Owner = string(q)

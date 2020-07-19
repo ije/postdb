@@ -10,8 +10,7 @@ func TestQuery(t *testing.T) {
 	afterID := NewID()
 	for _, q := range []Query{
 		ID(id.String()),
-		Slug("hello-world"),
-		Type("news"),
+		Alias("hello-world"),
 		Owner("admin"),
 		Status(123),
 		Tags("hello", "world"),
@@ -26,8 +25,7 @@ func TestQuery(t *testing.T) {
 	}
 
 	toBe(t, "ID", string(res.ID), string(id.Bytes()))
-	toBe(t, "Slug", res.Slug, "hello-world")
-	toBe(t, "Type", res.Type, "news")
+	toBe(t, "Slug", res.Alias, "hello-world")
 	toBe(t, "Owner", res.Owner, "admin")
 	toBe(t, "Status", res.Status, uint8(123))
 	toBe(t, "Tags", len(res.Tags), 3)

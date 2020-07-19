@@ -7,8 +7,7 @@ import (
 // Resolver to resolves query
 type Resolver struct {
 	ID         []byte
-	Slug       string
-	Type       string
+	Alias      string
 	Owner      string
 	Status     uint8
 	HasStatus  bool
@@ -29,11 +28,8 @@ func (res *Resolver) Apply(query Query) {
 			res.ID = q.Bytes()
 		}
 
-	case slugQuery:
-		res.Slug = string(q)
-
-	case typeQuery:
-		res.Type = string(q)
+	case aliasQuery:
+		res.Alias = string(q)
 
 	case ownerQuery:
 		res.Owner = string(q)

@@ -18,15 +18,14 @@ func TestDB(t *testing.T) {
 	defer db.Close()
 
 	// flush
-	_, err = db.Delete(q.Type("test"))
+	_, err = db.Delete(q.Tags("世界"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i := 0; i < 10; i++ {
 		_, err := db.Put(
-			q.Type("test"),
-			q.Slug(fmt.Sprintf("hello-world-%d", i+1)),
+			q.Alias(fmt.Sprintf("hello-world-%d", i+1)),
 			q.Status(1),
 			q.Owner("admin"),
 			q.Tags("hello", "world", "世界"),
@@ -41,8 +40,7 @@ func TestDB(t *testing.T) {
 	}
 
 	postZh, err := db.Put(
-		q.Type("test"),
-		q.Slug("hello-world-cn"),
+		q.Alias("hello-world-cn"),
 		q.Status(1),
 		q.Owner("admin"),
 		q.Tags("hello", "world", "世界"),
@@ -64,7 +62,7 @@ func TestDB(t *testing.T) {
 
 	_, err = db.Update(
 		postZh.ID,
-		q.Slug("hello-world-zh"),
+		q.Alias("hello-world-zh"),
 		q.Status(2),
 		q.Owner("adminisitor"),
 		q.Tags("你好", "世界"),
@@ -82,7 +80,7 @@ func TestDB(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	toBe(t, "postZh.Slug", postZh.Slug, "hello-world-zh")
+	toBe(t, "postZh.Alias", postZh.Alias, "hello-world-zh")
 	toBe(t, "postZh.Status", postZh.Status, uint8(2))
 	toBe(t, "postZh.Owner", postZh.Owner, "adminisitor")
 	toBe(t, "postZh.Tags", strings.Join(postZh.Tags, " "), "你好 世界")
@@ -96,7 +94,7 @@ func TestDB(t *testing.T) {
 	}
 	toBe(t, "posts len", len(posts), 5)
 	for i, post := range posts {
-		t.Logf(`%d. %s/%s "%s" %s`, i+1, post.ID, post.Slug, string(post.KV.Get("title")), string(post.KV.Get("date")))
+		t.Logf(`%d. %s/%s "%s" %s`, i+1, post.ID, post.Alias, string(post.KV.Get("title")), string(post.KV.Get("date")))
 	}
 }
 

@@ -10,8 +10,7 @@ type Query interface {
 	QueryType() string
 }
 
-type slugQuery string
-type typeQuery string
+type aliasQuery string
 type ownerQuery string
 type statusQuery uint8
 type tagsQuery []string
@@ -21,14 +20,9 @@ type limitQuery uint32
 type rangeQuery [17]byte
 type orderQuery uint8
 
-// Slug returns a slug Query
-func Slug(slug string) Query {
-	return slugQuery(strings.ToLower(strings.TrimSpace(slug)))
-}
-
-// Type returns a type Query
-func Type(t string) Query {
-	return typeQuery(strings.TrimSpace(t))
+// Alias returns a alias Query
+func Alias(alias string) Query {
+	return aliasQuery(strings.ReplaceAll(strings.ToLower(strings.TrimSpace(alias)), " ", "-"))
 }
 
 // Owner returns a owner Query
@@ -119,13 +113,8 @@ func Order(order uint8) Query {
 }
 
 // QueryType implements the Query interface
-func (q slugQuery) QueryType() string {
-	return "slug"
-}
-
-// QueryType implements the Query interface
-func (q typeQuery) QueryType() string {
-	return "type"
+func (q aliasQuery) QueryType() string {
+	return "alias"
 }
 
 // QueryType implements the Query interface

@@ -8,8 +8,7 @@ import (
 func TestPostMeta(t *testing.T) {
 	post := NewPost()
 	for _, q := range []Query{
-		Type("blog"),
-		Slug("Hello World"),
+		Alias("Hello World"),
 		Status(1),
 		Owner("admin"),
 		Tags("hello", "world"),
@@ -30,7 +29,7 @@ func TestPostMeta(t *testing.T) {
 	toBe(t, "post.KV.title", string(post.KV["title"]), "Hello World!")
 	toBe(t, "post.KV.date", string(post.KV["date"]), "2020-01-01")
 	toBe(t, "_post.ID", _post.ID.String(), post.ID.String())
-	toBe(t, "_post.Type", _post.Type, post.Type)
+	toBe(t, "_post.Alias", _post.Alias, post.Alias)
 	toBe(t, "_post.ACL", _post.Status, post.Status)
 	toBe(t, "_post.Owner", _post.Owner, post.Owner)
 	toBe(t, "_post.Crtime", _post.Crtime, post.Crtime)
