@@ -1,14 +1,15 @@
 package postdb
 
-import (
-	"crypto/tls"
-)
-
 type Server struct {
-	DB        *NSDB
-	Port      uint16
-	Secret    string
-	TLSConfig *tls.Config
+	running bool
+	usersDB *DB
+	dbsDB   *DB
+	DBDir   string
+	Port    uint16
+}
+
+func (s *Server) CreateUser(name string, password string) error {
+	return nil
 }
 
 func (s *Server) Serve() error {
