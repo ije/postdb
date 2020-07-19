@@ -23,98 +23,75 @@ if err != nil {
 }
 defer db.Close()
 
-// get the value for a key
-db.GetValue("k")
-
-// put the value for a key
-db.PutValue("k", []byte("v"))
-
-// get all posts
-db.GetPosts()
+// get all posts in the database
+db.List()
 
 // get posts with query
-db.GetPosts(q.Type("type"), q.Tags("tag"), q.Limit(100), q.Order(q.DESC), q.Keys("title", "thumb"))
+db.List(q.Type("type"), q.Tags("tag"), q.Limit(100), q.Order(q.DESC), q.Keys("title", "thumb"))
 
 // get post by id without kv
-db.GetPost(q.ID("id"))
+db.Get(q.ID("id"))
 
 // get post by id with specified kv
-db.GetPost(q.ID("id"), q.Keys("title", "content"))
+db.Get(q.ID("id"), q.Keys("title", "content"))
 
 // get post by id with full kv
-db.GetPost(q.ID("id"), q.Keys("*")))
+db.Get(q.ID("id"), q.Keys("*")))
 
 // add a new post
-db.AddPost(q.Type("type"), q.Slug("slug"), q.Tags("tag1", "tag2"), q.KV{"k": []byte("v1")})
+db.Put(q.Type("type"), q.Slug("slug"), q.Tags("tag1", "tag2"), q.KV{"k": []byte("v")})
 
 // update the existing post
-db.UpdatePost(q.ID("id"), q.KV{"k": []byte("v2")})
+db.Update(q.ID("id"), q.KV{"k2": []byte("v2")})
 
-// remove the existing post permanently
-db.RemovePost(q.ID("id"))
+// delete the existing post kv
+db.DeleteKV(q.ID("id"), q.Keys("k2"))
+
+// delete the existing posts permanently
+db.Delete(q.ID("id"))
 
 // backup the entire database
 db.WriteTo(w)
 ```
 
-with namespace:
-```go
-// opening a ns database
-db, err := postdb.New("path")
-if err != nil {
-    return err
-}
-defer db.Close()
- 
-// use default namespace "public"
-db.GetPosts()
-...
-
-// opening the namespace database
-ns, err := db.Namespace("name")
-if err != nil {
-    return err
-}
-
-// use the namespace database
-ns.GetPosts()
-...
-```
-
 as server of C/S:
 
 ```go
-// Opening a ns database
-db, err := postdb.New("path")
-if err != nil {
-    return err
+// create a new server
+s := &postdb.Server{
+    DBDir:  "path",
+    Port:   9000,
 }
-defer db.Close()
+
+// create a new database user
+s.CreateUser("USERNAME", "PASS")
 
 // start the server
-server := &postdb.Server{
-    DB:     db,
-    Port:   9000,
-    Secret: "PASS",
-}
-server.Serve()
+s.Serve()
 ```
 
 as client of C/S:
 
 ```go
 // connect to server
-db, err := postdb.Connect(postdb.ConnConfig{
-    Host:   "localhost"
-    Port:   9000,
-    Secret: "PASS",
+client, err := postdb.Connect(postdb.ConnConfig{
+    Host:     "localhost"
+    Port:     9000,
+    User:     "USERNAME",
+    Password: "PASS",
 })
 if err != nil {
     return err
 }
 
-// use the database
-db.GetPosts()
+// opening a client database
+db, err := client.DB("name")
+if err != nil {
+    return err
+}
+
+// use the client database
+db.List()
 ...
 ```
 
