@@ -27,7 +27,7 @@ defer db.Close()
 db.List()
 
 // get posts with query
-db.List(q.Type("type"), q.Tags("tag"), q.Limit(100), q.Order(q.DESC), q.Keys("title", "thumb"))
+db.List(q.Tags("tag"), q.Limit(100), q.Order(q.DESC), q.Keys("title", "thumb"))
 
 // get post by id without kv
 db.Get(q.ID("id"))
@@ -39,7 +39,7 @@ db.Get(q.ID("id"), q.Keys("title", "content"))
 db.Get(q.ID("id"), q.Keys("*")))
 
 // add a new post
-db.Put(q.Type("type"), q.Slug("slug"), q.Tags("tag1", "tag2"), q.KV{"k": []byte("v")})
+db.Put(q.Alias("Alias"), q.Tags("tag1", "tag2"), q.KV{"k": []byte("v")})
 
 // update the existing post
 db.Update(q.ID("id"), q.KV{"k2": []byte("v2")})
