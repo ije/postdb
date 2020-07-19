@@ -33,14 +33,12 @@ func (tx *ClientTx) Update(qs ...q.Query) (*q.Post, error) {
 }
 
 // DeleteKV deletes the post kv
-func (tx *ClientTx) DeleteKV(qs ...q.Query) (err error) {
-
+func (tx *ClientTx) DeleteKV(qs ...q.Query) (n int, err error) {
 	return
 }
 
 // Delete deletes the post
 func (tx *ClientTx) Delete(qs ...q.Query) (n int, err error) {
-
 	return
 }
 

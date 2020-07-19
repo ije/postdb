@@ -464,10 +464,10 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 }
 
 // DeleteKV deletes the post kv
-func (tx *Tx) DeleteKV(qs ...q.Query) (err error) {
+func (tx *Tx) DeleteKV(qs ...q.Query) (n int, err error) {
 	post, err := tx.Get(qs...)
 	if err != nil {
-		return err
+		return
 	}
 
 	var res q.Resolver
@@ -483,6 +483,7 @@ func (tx *Tx) DeleteKV(qs ...q.Query) (err error) {
 				if err != nil {
 					return
 				}
+				n++
 			}
 		}
 	}

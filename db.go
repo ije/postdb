@@ -130,19 +130,24 @@ func (db *DB) Update(qs ...q.Query) (*q.Post, error) {
 }
 
 // DeleteKV deletes the post kv
-func (db *DB) DeleteKV(qs ...q.Query) error {
+func (db *DB) DeleteKV(qs ...q.Query) (int, error) {
 	tx, err := db.Begin(true)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer tx.Rollback()
 
-	err = tx.DeleteKV(qs...)
+	n, err := tx.DeleteKV(qs...)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		return 0, err
+	}
+
+	return n, nil
 }
 
 // Delete deletes the post
