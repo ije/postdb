@@ -28,8 +28,8 @@ func (tx *ClientTx) Put(qs ...q.Query) (*q.Post, error) {
 }
 
 // Update updates the post
-func (tx *ClientTx) Update(qs ...q.Query) error {
-	return nil
+func (tx *ClientTx) Update(qs ...q.Query) (*q.Post, error) {
+	return nil, nil
 }
 
 // DeleteKV deletes the post kv

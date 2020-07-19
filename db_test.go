@@ -60,7 +60,7 @@ func TestDB(t *testing.T) {
 	}
 	toBe(t, "posts len", len(posts), 11)
 
-	err = db.Update(
+	_, err = db.Update(
 		postZh.ID,
 		q.Alias("hello-world-zh"),
 		q.Status(2),

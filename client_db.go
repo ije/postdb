@@ -63,24 +63,24 @@ func (db *ClientDB) Put(qs ...q.Query) (*q.Post, error) {
 }
 
 // Update updates the post
-func (db *ClientDB) Update(qs ...q.Query) error {
+func (db *ClientDB) Update(qs ...q.Query) (*q.Post, error) {
 	tx, err := db.Begin(true)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer tx.Rollback()
 
-	err = tx.Update(qs...)
+	post, err := tx.Update(qs...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return post, nil
 }
 
 // DeleteKV deletes the post kv
