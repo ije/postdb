@@ -203,7 +203,7 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 	return
 }
 
-// Get returns the post by querys
+// Get returns the post
 func (tx *Tx) Get(qs ...q.Query) (*q.Post, error) {
 	var res q.Resolver
 	for _, q := range qs {

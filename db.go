@@ -78,7 +78,7 @@ func (db *DB) List(qs ...q.Query) ([]q.Post, error) {
 	return tx.List(qs...), nil
 }
 
-// Get returns the post by querys
+// Get returns the post
 func (db *DB) Get(qs ...q.Query) (*q.Post, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
