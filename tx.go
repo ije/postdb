@@ -48,6 +48,22 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 				posts[0] = *post
 			}
 		}
+	} else if len(res.IDs) > 0 {
+		posts = make([]q.Post, len(res.IDs))
+		for i, id := range res.IDs {
+			v := metaBucket.Get(id)
+			if v != nil {
+				post, err := q.PostFromBytes(v)
+				if err == nil && (!queryOwner || post.Owner == res.Owner) {
+					posts[i] = *post
+					n++
+					if res.Limit > 0 && n >= res.Limit {
+						break
+					}
+				}
+			}
+		}
+		posts = posts[:n]
 	} else if len(res.Alias) > 0 {
 		aliasIndexBucket := indexBucket.Bucket(postaliasKey)
 		id := aliasIndexBucket.Get([]byte(res.Alias))

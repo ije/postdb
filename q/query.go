@@ -10,6 +10,7 @@ type Query interface {
 	QueryType() string
 }
 
+type idsQuery [][]byte
 type aliasQuery string
 type ownerQuery string
 type statusQuery uint8
@@ -19,6 +20,25 @@ type afterQuery [13]byte
 type limitQuery uint32
 type rangeQuery [17]byte
 type orderQuery uint8
+
+// IDs returns a IDs Query
+func IDs(ids ...string) Query {
+	set := map[string]struct{}{}
+	a := make([][]byte, len(ids))
+	i := 0
+	for _, id := range ids {
+		xid := ID(id)
+		if !xid.IsNil() {
+			_, ok := set[id]
+			if !ok {
+				set[id] = struct{}{}
+				a[i] = xid.Bytes()
+				i++
+			}
+		}
+	}
+	return idsQuery(a[:i])
+}
 
 // Alias returns a alias Query
 func Alias(alias string) Query {
@@ -81,12 +101,10 @@ func K(keys ...string) Query {
 // After returns a after Query
 func After(id string) Query {
 	var q afterQuery
-	if len(id) == 20 {
-		xid := ID(id)
-		if !xid.IsNil() {
-			q[0] = 1
-			copy(q[1:], xid.Bytes())
-		}
+	xid := ID(id)
+	if !xid.IsNil() {
+		q[0] = 1
+		copy(q[1:], xid.Bytes())
 	}
 	return q
 }
@@ -115,6 +133,11 @@ func Range(after string, limit uint32) Query {
 // Order returns a order Query
 func Order(order uint8) Query {
 	return orderQuery(order)
+}
+
+// QueryType implements the Query interface
+func (q idsQuery) QueryType() string {
+	return "ids"
 }
 
 // QueryType implements the Query interface

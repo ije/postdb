@@ -7,6 +7,7 @@ import (
 // Resolver to resolves query
 type Resolver struct {
 	ID         []byte
+	IDs        [][]byte
 	BadID      bool
 	Alias      string
 	Owner      string
@@ -33,6 +34,9 @@ func (res *Resolver) Apply(query Query) {
 			res.ID = nil
 			res.BadID = true
 		}
+
+	case idsQuery:
+		res.IDs = q
 
 	case aliasQuery:
 		res.Alias = string(q)
