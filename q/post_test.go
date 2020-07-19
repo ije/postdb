@@ -10,7 +10,7 @@ func TestPostMeta(t *testing.T) {
 	for _, q := range []Query{
 		Type("blog"),
 		Slug("Hello World"),
-		Status(0),
+		Status(1),
 		Owner("admin"),
 		Tags("hello", "world"),
 		KV{
@@ -41,6 +41,6 @@ func TestPostMeta(t *testing.T) {
 
 func toBe(t *testing.T, name string, a interface{}, b interface{}) {
 	if a != b {
-		t.Fatalf("%s(%v) should equal to %v", name, a, b)
+		t.Fatalf("the %s should equal to %v, but %v", name, b, a)
 	}
 }

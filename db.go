@@ -67,61 +67,34 @@ func (db *DB) Begin(writable bool) (*Tx, error) {
 	return &Tx{tx}, nil
 }
 
-// GetValue returns the value for a key in the database.
-func (db *DB) GetValue(key string) ([]byte, error) {
+func (db *DB) Get(qs ...q.Query) (*q.Post, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
-	return tx.GetValue(key), nil
+	return tx.Get(qs...)
 }
 
-// PutValue sets the value for a key in the database.
-func (db *DB) PutValue(key string, value []byte) error {
-	tx, err := db.Begin(true)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	err = tx.PutValue(key, value)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit()
-}
-
-func (db *DB) GetPost(qs ...q.Query) (*q.Post, error) {
+func (db *DB) List(qs ...q.Query) ([]q.Post, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
-	return tx.GetPost(qs...)
+	return tx.List(qs...), nil
 }
 
-func (db *DB) GetPosts(qs ...q.Query) ([]q.Post, error) {
-	tx, err := db.Begin(false)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	return tx.GetPosts(qs...), nil
-}
-
-func (db *DB) AddPost(qs ...q.Query) (*q.Post, error) {
+func (db *DB) Put(qs ...q.Query) (*q.Post, error) {
 	tx, err := db.Begin(true)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
-	post, err := tx.AddPost(qs...)
+	post, err := tx.Put(qs...)
 	if err != nil {
 		return nil, err
 	}
@@ -134,14 +107,34 @@ func (db *DB) AddPost(qs ...q.Query) (*q.Post, error) {
 	return post, nil
 }
 
-func (db *DB) UpdatePost(qs ...q.Query) error {
+func (db *DB) Update(qs ...q.Query) (*q.Post, error) {
+	tx, err := db.Begin(true)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	post, err := tx.Update(qs...)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return post, nil
+}
+
+func (db *DB) DeleteKV(qs ...q.Query) error {
 	tx, err := db.Begin(true)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	err = tx.UpdatePost(qs...)
+	err = tx.DeleteKV(qs...)
 	if err != nil {
 		return err
 	}
@@ -149,19 +142,24 @@ func (db *DB) UpdatePost(qs ...q.Query) error {
 	return tx.Commit()
 }
 
-func (db *DB) RemovePost(qs ...q.Query) error {
+func (db *DB) Delete(qs ...q.Query) (int, error) {
 	tx, err := db.Begin(true)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer tx.Rollback()
 
-	err = tx.RemovePost(qs...)
+	n, err := tx.Delete(qs...)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		return 0, err
+	}
+
+	return n, nil
 }
 
 // WriteTo writes the entire database to a writer.

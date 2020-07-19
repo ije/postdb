@@ -11,10 +11,11 @@ type Resolver struct {
 	Type       string
 	Owner      string
 	Status     uint8
-	Tags       []string
-	KVKeys     []string
-	KVWildcard bool
+	HasStatus  bool
+	Tags       map[string]struct{}
 	KV         KV
+	KVKeys     map[string]struct{}
+	KVWildcard bool
 	After      []byte
 	Limit      uint32
 	Order      uint8
@@ -39,50 +40,25 @@ func (res *Resolver) Apply(query Query) {
 
 	case statusQuery:
 		res.Status = uint8(q)
+		res.HasStatus = true
 
 	case tagsQuery:
-		l := len(q)
-		if l > 0 {
-			set := map[string]struct{}{}
-			n := len(res.Tags)
-			a := make([]string, n+l)
-			for i, s := range res.Tags {
-				set[s] = struct{}{}
-				a[i] = s
-			}
-			for _, s := range q {
-				_, ok := set[s]
-				if !ok {
-					set[s] = struct{}{}
-					a[n] = s
-					n++
-				}
-			}
-			res.Tags = a[:n]
+		if res.Tags == nil {
+			res.Tags = map[string]struct{}{}
+		}
+		for _, s := range q {
+			res.Tags[s] = struct{}{}
 		}
 
 	case keysQuery:
-		l := len(q)
-		if l > 0 {
-			set := map[string]struct{}{}
-			n := len(res.KVKeys)
-			a := make([]string, n+l)
-			for i, s := range res.KVKeys {
-				set[s] = struct{}{}
-				a[i] = s
+		if res.KVKeys == nil {
+			res.KVKeys = map[string]struct{}{}
+		}
+		for _, s := range q {
+			if s == "*" {
+				res.KVWildcard = true
 			}
-			for _, s := range q {
-				if s == "*" {
-					res.KVWildcard = true
-				}
-				_, ok := set[s]
-				if !ok {
-					set[s] = struct{}{}
-					a[n] = s
-					n++
-				}
-			}
-			res.KVKeys = a[:n]
+			res.KVKeys[s] = struct{}{}
 		}
 
 	case KV:

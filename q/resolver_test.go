@@ -1,7 +1,6 @@
 package q
 
 import (
-	"strings"
 	"testing"
 )
 
@@ -17,7 +16,7 @@ func TestQuery(t *testing.T) {
 		Status(123),
 		Tags("hello", "world"),
 		Tags("world", "世界"),
-		Keys("title", "content", "*"),
+		Keys("title", "content", "*", "content"),
 		KV{"title": []byte("Hello World")},
 		After(afterID.String()),
 		Limit(100),
@@ -31,8 +30,8 @@ func TestQuery(t *testing.T) {
 	toBe(t, "Type", res.Type, "news")
 	toBe(t, "Owner", res.Owner, "admin")
 	toBe(t, "Status", res.Status, uint8(123))
-	toBe(t, "Tags", strings.Join(res.Tags, " "), "hello world 世界")
-	toBe(t, "KVKeys", strings.Join(res.KVKeys, " "), "title content *")
+	toBe(t, "Tags", len(res.Tags), 3)
+	toBe(t, "KVKeys", len(res.KVKeys), 3)
 	toBe(t, "KVWildcard", res.KVWildcard, true)
 	toBe(t, "KV.title", string(res.KV["title"]), "Hello World")
 	toBe(t, "Aftar", string(res.After), string(afterID.Bytes()))
