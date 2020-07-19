@@ -14,6 +14,7 @@ type Tx struct {
 	t *bolt.Tx
 }
 
+// List returns some posts
 func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 	var cur *bolt.Cursor
 	var prefixs [][]byte
@@ -202,6 +203,7 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 	return
 }
 
+// Get returns the post by querys
 func (tx *Tx) Get(qs ...q.Query) (*q.Post, error) {
 	var res q.Resolver
 	for _, q := range qs {
@@ -249,6 +251,7 @@ func (tx *Tx) Get(qs ...q.Query) (*q.Post, error) {
 	return post, nil
 }
 
+// Put puts a new post
 func (tx *Tx) Put(qs ...q.Query) (*q.Post, error) {
 	metaBucket := tx.t.Bucket(postmetaKey)
 	indexBucket := tx.t.Bucket(postindexKey)
@@ -331,6 +334,7 @@ func (tx *Tx) Put(qs ...q.Query) (*q.Post, error) {
 	return post, nil
 }
 
+// Update updates the post
 func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 	metaBucket := tx.t.Bucket(postmetaKey)
 	indexBucket := tx.t.Bucket(postindexKey)
@@ -481,6 +485,7 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 	return copy, nil
 }
 
+// DeleteKV deletes the post kv
 func (tx *Tx) DeleteKV(qs ...q.Query) (err error) {
 	post, err := tx.Get(qs...)
 	if err != nil {
@@ -507,6 +512,7 @@ func (tx *Tx) DeleteKV(qs ...q.Query) (err error) {
 	return
 }
 
+// Delete deletes the post
 func (tx *Tx) Delete(qs ...q.Query) (n int, err error) {
 	metaBucket := tx.t.Bucket(postmetaKey)
 	indexBucket := tx.t.Bucket(postindexKey)

@@ -67,16 +67,7 @@ func (db *DB) Begin(writable bool) (*Tx, error) {
 	return &Tx{tx}, nil
 }
 
-func (db *DB) Get(qs ...q.Query) (*q.Post, error) {
-	tx, err := db.Begin(false)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	return tx.Get(qs...)
-}
-
+// List returns some posts
 func (db *DB) List(qs ...q.Query) ([]q.Post, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
@@ -87,6 +78,18 @@ func (db *DB) List(qs ...q.Query) ([]q.Post, error) {
 	return tx.List(qs...), nil
 }
 
+// Get returns the post by querys
+func (db *DB) Get(qs ...q.Query) (*q.Post, error) {
+	tx, err := db.Begin(false)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	return tx.Get(qs...)
+}
+
+// Put puts a new post
 func (db *DB) Put(qs ...q.Query) (*q.Post, error) {
 	tx, err := db.Begin(true)
 	if err != nil {
@@ -107,6 +110,7 @@ func (db *DB) Put(qs ...q.Query) (*q.Post, error) {
 	return post, nil
 }
 
+// Update updates the post
 func (db *DB) Update(qs ...q.Query) (*q.Post, error) {
 	tx, err := db.Begin(true)
 	if err != nil {
@@ -127,6 +131,7 @@ func (db *DB) Update(qs ...q.Query) (*q.Post, error) {
 	return post, nil
 }
 
+// DeleteKV deletes the post kv
 func (db *DB) DeleteKV(qs ...q.Query) error {
 	tx, err := db.Begin(true)
 	if err != nil {
@@ -142,6 +147,7 @@ func (db *DB) DeleteKV(qs ...q.Query) error {
 	return tx.Commit()
 }
 
+// Delete deletes the post
 func (db *DB) Delete(qs ...q.Query) (int, error) {
 	tx, err := db.Begin(true)
 	if err != nil {
