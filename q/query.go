@@ -73,6 +73,11 @@ func Keys(keys ...string) Query {
 	return keysQuery(a[:i])
 }
 
+// K is a shortcut for Key
+func K(keys ...string) Query {
+	return Keys(keys...)
+}
+
 // After returns a after Query
 func After(id string) Query {
 	var q afterQuery

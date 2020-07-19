@@ -36,7 +36,7 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 	kvBucket := tx.t.Bucket(postkvKey)
 
 	if queryTags {
-		cur = indexBucket.Bucket(tagKey).Cursor()
+		cur = indexBucket.Bucket(posttagKey).Cursor()
 		prefixs = make([][]byte, len(res.Tags))
 		var i int
 		for tag := range res.Tags {
@@ -53,7 +53,7 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 	} else if queryOwner {
 		prefix := make([]byte, len(res.Owner)+1)
 		copy(prefix, []byte(res.Owner))
-		cur = indexBucket.Bucket(ownerKey).Cursor()
+		cur = indexBucket.Bucket(postownerKey).Cursor()
 		prefixs = [][]byte{prefix}
 	} else {
 		c := metaBucket.Cursor()
@@ -198,8 +198,8 @@ func (tx *Tx) Get(qs ...q.Query) (*q.Post, error) {
 	if len(res.ID) == 12 {
 		metaData = tx.t.Bucket(postmetaKey).Get(res.ID)
 	} else if len(res.Alias) > 0 {
-		slugIndexBucket := tx.t.Bucket(postindexKey).Bucket(slugKey)
-		id := slugIndexBucket.Get([]byte(res.Alias))
+		aliasIndexBucket := tx.t.Bucket(postindexKey).Bucket(postaliasKey)
+		id := aliasIndexBucket.Get([]byte(res.Alias))
 		if len(id) == 12 {
 			metaData = tx.t.Bucket(postmetaKey).Get(id)
 		}
@@ -252,18 +252,18 @@ func (tx *Tx) Put(qs ...q.Query) (*q.Post, error) {
 	}
 
 	if len(post.Alias) > 0 {
-		slugIndexBucket := indexBucket.Bucket(slugKey)
-		if slugIndexBucket.Get([]byte(post.Alias)) != nil {
+		aliasIndexBucket := indexBucket.Bucket(postaliasKey)
+		if aliasIndexBucket.Get([]byte(post.Alias)) != nil {
 			return nil, ErrDuplicateAlias
 		}
-		err = slugIndexBucket.Put([]byte(post.Alias), post.ID.Bytes())
+		err = aliasIndexBucket.Put([]byte(post.Alias), post.ID.Bytes())
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if len(post.Owner) > 0 {
-		ownerIndexBucket := indexBucket.Bucket(ownerKey)
+		ownerIndexBucket := indexBucket.Bucket(postownerKey)
 		keypath := [][]byte{[]byte(post.Owner), post.ID.Bytes()}
 		err = ownerIndexBucket.Put(bytes.Join(keypath, []byte{0}), []byte{1})
 		if err != nil {
@@ -272,7 +272,7 @@ func (tx *Tx) Put(qs ...q.Query) (*q.Post, error) {
 	}
 
 	if len(post.Tags) > 0 {
-		tagIndexBucket := indexBucket.Bucket(tagKey)
+		tagIndexBucket := indexBucket.Bucket(posttagKey)
 		for _, tag := range post.Tags {
 			keypath := [][]byte{[]byte(tag), post.ID.Bytes()}
 			err = tagIndexBucket.Put(bytes.Join(keypath, []byte{0}), []byte{1})
@@ -330,20 +330,20 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 
 	var shouldUpdateMeta bool
 
-	// update slug index
+	// update alias index
 	if copy.Alias != post.Alias {
-		slugIndexBucket := indexBucket.Bucket(slugKey)
-		if slugIndexBucket.Get([]byte(copy.Alias)) != nil {
+		aliasIndexBucket := indexBucket.Bucket(postaliasKey)
+		if aliasIndexBucket.Get([]byte(copy.Alias)) != nil {
 			return nil, ErrDuplicateAlias
 		}
 		if len(post.Alias) > 0 {
-			err = slugIndexBucket.Delete([]byte(post.Alias))
+			err = aliasIndexBucket.Delete([]byte(post.Alias))
 			if err != nil {
 				return nil, err
 			}
 		}
 		if len(copy.Alias) > 0 {
-			err = slugIndexBucket.Put([]byte(copy.Alias), copy.ID.Bytes())
+			err = aliasIndexBucket.Put([]byte(copy.Alias), copy.ID.Bytes())
 			if err != nil {
 				return nil, err
 			}
@@ -355,7 +355,7 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 
 	// update owner index
 	if copy.Owner != post.Owner {
-		ownerIndexBucket := indexBucket.Bucket(ownerKey)
+		ownerIndexBucket := indexBucket.Bucket(postownerKey)
 		if len(post.Owner) > 0 {
 			keypath := [][]byte{[]byte(post.Owner), post.ID.Bytes()}
 			err = ownerIndexBucket.Delete(bytes.Join(keypath, []byte{0}))
@@ -377,7 +377,7 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 
 	// update tags index
 	if strings.Join(copy.Tags, "") != strings.Join(post.Tags, "") {
-		tagIndexBucket := indexBucket.Bucket(tagKey)
+		tagIndexBucket := indexBucket.Bucket(posttagKey)
 		if len(post.Tags) > 0 {
 			for _, tag := range post.Tags {
 				keypath := [][]byte{[]byte(tag), post.ID.Bytes()}
@@ -466,15 +466,15 @@ func (tx *Tx) Delete(qs ...q.Query) (n int, err error) {
 		}
 
 		if len(post.Alias) > 0 {
-			slugIndexBucket := indexBucket.Bucket(slugKey)
-			err = slugIndexBucket.Delete([]byte(post.Alias))
+			aliasIndexBucket := indexBucket.Bucket(postaliasKey)
+			err = aliasIndexBucket.Delete([]byte(post.Alias))
 			if err != nil {
 				return
 			}
 		}
 
 		if len(post.Owner) > 0 {
-			ownerIndexBucket := indexBucket.Bucket(ownerKey)
+			ownerIndexBucket := indexBucket.Bucket(postownerKey)
 			keypath := [][]byte{[]byte(post.Owner), post.ID.Bytes()}
 			err = ownerIndexBucket.Delete(bytes.Join(keypath, []byte{0}))
 			if err != nil {
@@ -483,7 +483,7 @@ func (tx *Tx) Delete(qs ...q.Query) (n int, err error) {
 		}
 
 		if len(post.Tags) > 0 {
-			tagIndexBucket := indexBucket.Bucket(tagKey)
+			tagIndexBucket := indexBucket.Bucket(posttagKey)
 			for _, tag := range post.Tags {
 				keypath := [][]byte{[]byte(tag), post.ID.Bytes()}
 				err = tagIndexBucket.Delete(bytes.Join(keypath, []byte{0}))

@@ -25,7 +25,6 @@ func Open(path string, mode os.FileMode) (db *DB, err error) {
 
 	err = b.Update(func(tx *bolt.Tx) error {
 		for _, key := range [][]byte{
-			valuesKey,
 			postmetaKey,
 			postindexKey,
 			postkvKey,
@@ -37,10 +36,9 @@ func Open(path string, mode os.FileMode) (db *DB, err error) {
 		}
 		indexBucket := tx.Bucket(postindexKey)
 		for _, key := range [][]byte{
-			slugKey,
-			typeKey,
-			ownerKey,
-			tagKey,
+			postaliasKey,
+			postownerKey,
+			posttagKey,
 		} {
 			_, err := indexBucket.CreateBucketIfNotExists(key)
 			if err != nil {

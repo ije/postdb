@@ -27,25 +27,25 @@ defer db.Close()
 db.List()
 
 // get posts with query
-db.List(q.Tags("tag"), q.Limit(100), q.Order(q.DESC), q.Keys("title", "thumb"))
+db.List(q.Tags("tag"), q.Limit(100), q.Order(q.DESC), q.K("title", "thumb"))
 
 // get post by id without kv
 db.Get(q.ID("id"))
 
 // get post by id with specified kv
-db.Get(q.ID("id"), q.Keys("title", "content"))
+db.Get(q.ID("id"), q.K("title", "content"))
 
 // get post by id with full kv
-db.Get(q.ID("id"), q.Keys("*")))
+db.Get(q.ID("id"), q.K("*")))
 
 // add a new post
-db.Put(q.Alias("Alias"), q.Tags("tag1", "tag2"), q.KV{"k": []byte("v")})
+db.Put(q.Alias("alias"), q.Tags("tag1", "tag2"), q.KV{"k": []byte("v")})
 
 // update the existing post
 db.Update(q.ID("id"), q.KV{"k2": []byte("v2")})
 
 // delete the existing post kv
-db.DeleteKV(q.ID("id"), q.Keys("k2"))
+db.DeleteKV(q.ID("id"), q.K("k2"))
 
 // delete the existing posts permanently
 db.Delete(q.ID("id"))
