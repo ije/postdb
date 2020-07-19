@@ -26,6 +26,10 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 		res.Apply(q)
 	}
 
+	if res.BadID || res.BadAfter {
+		return
+	}
+
 	queryTags := len(res.Tags) > 0
 	queryOwner := len(res.Owner) > 0
 	queryAfter := len(res.After) == 12
@@ -35,7 +39,29 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 	indexBucket := tx.t.Bucket(postindexKey)
 	kvBucket := tx.t.Bucket(postkvKey)
 
-	if queryTags {
+	if len(res.ID) == 12 {
+		v := metaBucket.Get(res.ID)
+		if v != nil {
+			post, err := q.PostFromBytes(v)
+			if err == nil && (!queryOwner || post.Owner == res.Owner) {
+				posts = make([]q.Post, 1)
+				posts[0] = *post
+			}
+		}
+	} else if len(res.Alias) > 0 {
+		aliasIndexBucket := indexBucket.Bucket(postaliasKey)
+		id := aliasIndexBucket.Get([]byte(res.Alias))
+		if len(id) == 12 {
+			v := metaBucket.Get(id)
+			if v != nil {
+				post, err := q.PostFromBytes(v)
+				if err == nil && (!queryOwner || post.Owner == res.Owner) {
+					posts = make([]q.Post, 1)
+					posts[0] = *post
+				}
+			}
+		}
+	} else if queryTags {
 		cur = indexBucket.Bucket(posttagKey).Cursor()
 		prefixs = make([][]byte, len(res.Tags))
 		var i int
