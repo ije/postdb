@@ -29,13 +29,13 @@ func (res *Resolver) Apply(query Query) {
 		}
 
 	case slugQuery:
-		res.Slug = toLowerTrim(string(q))
+		res.Slug = string(q)
 
 	case typeQuery:
-		res.Type = toLowerTrim(string(q))
+		res.Type = string(q)
 
 	case ownerQuery:
-		res.Owner = toLowerTrim(string(q))
+		res.Owner = string(q)
 
 	case statusQuery:
 		res.Status = uint8(q)

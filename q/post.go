@@ -166,16 +166,16 @@ func (p *Post) MetaData() []byte {
 func (p *Post) ApplyQuery(query Query) {
 	switch q := query.(type) {
 	case slugQuery:
-		p.Slug = toLowerTrim(string(q))
+		p.Slug = string(q)
 
 	case typeQuery:
-		p.Type = toLowerTrim(string(q))
+		p.Type = string(q)
+
+	case ownerQuery:
+		p.Owner = string(q)
 
 	case statusQuery:
 		p.Status = uint8(q)
-
-	case ownerQuery:
-		p.Owner = toLowerTrim(string(q))
 
 	case tagsQuery:
 		p.Tags = q

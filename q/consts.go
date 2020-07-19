@@ -6,8 +6,3 @@ const (
 	// ASC specifies the order of ASC
 	ASC
 )
-
-const (
-	// ANY string
-	ANY = "*"
-)

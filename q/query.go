@@ -3,8 +3,6 @@ package q
 import (
 	"encoding/binary"
 	"strings"
-
-	"github.com/rs/xid"
 )
 
 // A Query inferface
@@ -25,17 +23,17 @@ type orderQuery uint8
 
 // Slug returns a slug Query
 func Slug(slug string) Query {
-	return slugQuery(slug)
+	return slugQuery(strings.ToLower(strings.TrimSpace(slug)))
 }
 
 // Type returns a type Query
 func Type(t string) Query {
-	return typeQuery(t)
+	return typeQuery(strings.TrimSpace(t))
 }
 
 // Owner returns a owner Query
 func Owner(name string) Query {
-	return ownerQuery(name)
+	return ownerQuery(strings.TrimSpace(name))
 }
 
 // Status returns a status Query
@@ -49,7 +47,7 @@ func Tags(tags ...string) Query {
 	a := make([]string, len(tags))
 	i := 0
 	for _, s := range tags {
-		tag := toLowerTrim(s)
+		tag := strings.ToLower(strings.TrimSpace(s))
 		if tag != "" {
 			_, ok := set[tag]
 			if !ok {
@@ -85,8 +83,8 @@ func Keys(keys ...string) Query {
 func After(id string) Query {
 	var q afterQuery
 	if len(id) == 20 {
-		xid, err := xid.FromString(id)
-		if err == nil {
+		xid := ID(id)
+		if !xid.IsNil() {
 			q[0] = 1
 			copy(q[1:], xid.Bytes())
 		}
@@ -101,14 +99,14 @@ func Limit(limit uint8) Query {
 
 // Range returns a range Query.
 //
-// `postdb.GetPosts(q.Range("bs7pobh8d3b21ducpaqg", 100))`  equals `postdb.GetPosts(q.After("bs7pobh8d3b21ducpaqg"), q.Limit(100))`
+// `postdb.GetPosts(q.Range("bs7pobh8d3b21ducpaqg", 100))` equals `postdb.GetPosts(q.After("bs7pobh8d3b21ducpaqg"), q.Limit(100))`
 func Range(after string, limit uint32) Query {
 	var q rangeQuery
 	if len(after) == 20 && limit > 0 {
-		id, err := xid.FromString(after)
-		if err == nil {
+		xid := ID(after)
+		if !xid.IsNil() {
 			q[0] = 1
-			copy(q[1:], id.Bytes())
+			copy(q[1:], xid.Bytes())
 			binary.BigEndian.PutUint32(q[13:], limit)
 		}
 	}

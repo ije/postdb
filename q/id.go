@@ -14,8 +14,8 @@ func NewID() ObjectID {
 	return ObjectID(xid.New())
 }
 
-// ID returns a id Query
-func ID(id string) Query {
+// ID returns an ObjectID
+func ID(id string) ObjectID {
 	xid, err := xid.FromString(id)
 	if err != nil {
 		return nilObjectID
