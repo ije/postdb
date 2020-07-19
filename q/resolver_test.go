@@ -15,10 +15,10 @@ func TestQuery(t *testing.T) {
 		Type("news"),
 		Owner("admin"),
 		Status(123),
-		Keys("title", "content", "*"),
-		KV{"title": []byte("Hello World")},
 		Tags("hello", "world"),
 		Tags("world", "世界"),
+		Keys("title", "content", "*"),
+		KV{"title": []byte("Hello World")},
 		After(afterID.String()),
 		Limit(100),
 		Order(DESC),
@@ -32,9 +32,9 @@ func TestQuery(t *testing.T) {
 	toBe(t, "Owner", res.Owner, "admin")
 	toBe(t, "Status", res.Status, uint8(123))
 	toBe(t, "Tags", strings.Join(res.Tags, " "), "hello world 世界")
-	toBe(t, "Keys", strings.Join(res.Keys, " "), "title content *")
-	toBe(t, "WildcardKey", res.WildcardKey, true)
-	toBe(t, "Keys.title", string(res.KV["title"]), "Hello World")
+	toBe(t, "KVKeys", strings.Join(res.KVKeys, " "), "title content *")
+	toBe(t, "KVWildcard", res.KVWildcard, true)
+	toBe(t, "KV.title", string(res.KV["title"]), "Hello World")
 	toBe(t, "Aftar", string(res.After), string(afterID.Bytes()))
 	toBe(t, "Limit", res.Limit, uint32(100))
 	toBe(t, "Order", res.Order, DESC)

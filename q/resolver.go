@@ -6,18 +6,18 @@ import (
 
 // Resolver to resolves query
 type Resolver struct {
-	ID          []byte
-	Slug        string
-	Type        string
-	Owner       string
-	Status      uint8
-	Tags        []string
-	Keys        []string
-	WildcardKey bool
-	KV          KV
-	After       []byte
-	Limit       uint32
-	Order       uint8
+	ID         []byte
+	Slug       string
+	Type       string
+	Owner      string
+	Status     uint8
+	Tags       []string
+	KVKeys     []string
+	KVWildcard bool
+	KV         KV
+	After      []byte
+	Limit      uint32
+	Order      uint8
 }
 
 // Apply applies a query
@@ -65,15 +65,15 @@ func (res *Resolver) Apply(query Query) {
 		l := len(q)
 		if l > 0 {
 			set := map[string]struct{}{}
-			n := len(res.Keys)
+			n := len(res.KVKeys)
 			a := make([]string, n+l)
-			for i, s := range res.Keys {
+			for i, s := range res.KVKeys {
 				set[s] = struct{}{}
 				a[i] = s
 			}
 			for _, s := range q {
 				if s == "*" {
-					res.WildcardKey = true
+					res.KVWildcard = true
 				}
 				_, ok := set[s]
 				if !ok {
@@ -82,7 +82,7 @@ func (res *Resolver) Apply(query Query) {
 					n++
 				}
 			}
-			res.Keys = a[:n]
+			res.KVKeys = a[:n]
 		}
 
 	case KV:
