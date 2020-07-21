@@ -4,7 +4,7 @@ type Server struct {
 	running bool
 	usersDB *DB
 	dbsDB   *DB
-	DBDir   string
+	DBPath  string
 	Port    uint16
 }
 
