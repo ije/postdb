@@ -2,13 +2,13 @@ package q
 
 import (
 	"encoding/binary"
+	"fmt"
 )
 
 // Resolver to resolves query
 type Resolver struct {
 	ID         []byte
 	IDs        [][]byte
-	BadID      bool
 	Alias      string
 	Owner      string
 	Status     uint8
@@ -18,9 +18,9 @@ type Resolver struct {
 	KVKeys     map[string]struct{}
 	KVWildcard bool
 	After      []byte
-	BadAfter   bool
 	Limit      uint32
 	Order      uint8
+	Error      error
 }
 
 // Apply applies a query
@@ -29,10 +29,9 @@ func (res *Resolver) Apply(query Query) {
 	case ObjectID:
 		if !q.IsNil() {
 			res.ID = q.Bytes()
-			res.BadID = false
 		} else {
 			res.ID = nil
-			res.BadID = true
+			res.Error = fmt.Errorf("bad id")
 		}
 
 	case idsQuery:
@@ -86,10 +85,9 @@ func (res *Resolver) Apply(query Query) {
 	case afterQuery:
 		if q[0] == 1 {
 			res.After = q[1:]
-			res.BadAfter = false
 		} else {
 			res.After = nil
-			res.BadAfter = true
+			res.Error = fmt.Errorf("bad after id")
 		}
 
 	case limitQuery:

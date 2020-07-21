@@ -26,7 +26,7 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 		res.Apply(q)
 	}
 
-	if res.BadID || res.BadAfter {
+	if res.Error != nil {
 		return
 	}
 
@@ -114,7 +114,7 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 				break
 			}
 			post, err := q.PostFromBytes(v)
-			if err == nil {
+			if err == nil && (!res.HasStatus || post.Status == res.Status) {
 				posts = append(posts, *post)
 				n++
 				if res.Limit > 0 && n >= res.Limit {
@@ -370,7 +370,7 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 		copy.ApplyQuery(q)
 	}
 
-	var shouldUpdateMeta bool
+	shouldUpdateMeta := copy.Status != post.Status
 
 	// update alias index
 	if copy.Alias != post.Alias {

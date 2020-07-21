@@ -5,9 +5,21 @@ import (
 	"strings"
 )
 
+// A Setter inferface
+// type Setter interface {
+// 	Set(*Post)
+// 	Error() error
+// }
+
+// A Query inferface
+// type Query interface {
+// 	Apply(*Resolver)
+// 	Error() error
+// }
+
 // A Query inferface
 type Query interface {
-	QueryType() string
+	Error() error
 }
 
 type idsQuery [][]byte
@@ -135,52 +147,52 @@ func Order(order uint8) Query {
 	return orderQuery(order)
 }
 
-// QueryType implements the Query interface
-func (q idsQuery) QueryType() string {
-	return "ids"
+// Error implements the Query interface
+func (q idsQuery) Error() error {
+	return nil
 }
 
-// QueryType implements the Query interface
-func (q aliasQuery) QueryType() string {
-	return "alias"
+// Error implements the Query interface
+func (q aliasQuery) Error() error {
+	return nil
 }
 
-// QueryType implements the Query interface
-func (q ownerQuery) QueryType() string {
-	return "owner"
+// Error implements the Query interface
+func (q ownerQuery) Error() error {
+	return nil
 }
 
-// QueryType implements the Query interface
-func (status statusQuery) QueryType() string {
-	return "status"
+// Error implements the Query interface
+func (status statusQuery) Error() error {
+	return nil
 }
 
-// QueryType implements the Query interface
-func (q tagsQuery) QueryType() string {
-	return "tags"
+// Error implements the Query interface
+func (q tagsQuery) Error() error {
+	return nil
 }
 
-// QueryType implements the Query interface
-func (q keysQuery) QueryType() string {
-	return "keys"
+// Error implements the Query interface
+func (q keysQuery) Error() error {
+	return nil
 }
 
-// QueryType implements the Query interface
-func (q rangeQuery) QueryType() string {
-	return "range"
+// Error implements the Query interface
+func (q rangeQuery) Error() error {
+	return nil
 }
 
-// QueryType implements the Query interface
-func (q afterQuery) QueryType() string {
-	return "after"
+// Error implements the Query interface
+func (q afterQuery) Error() error {
+	return nil
 }
 
-// QueryType implements the Query interface
-func (q limitQuery) QueryType() string {
-	return "limit"
+// Error implements the Query interface
+func (q limitQuery) Error() error {
+	return nil
 }
 
-// QueryType implements the Query interface
-func (order orderQuery) QueryType() string {
-	return "order"
+// Error implements the Query interface
+func (order orderQuery) Error() error {
+	return nil
 }

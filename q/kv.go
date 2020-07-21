@@ -25,7 +25,7 @@ func (kv KV) Del(key string) {
 	delete(kv, key)
 }
 
-// QueryType implements the Query interface
-func (kv KV) QueryType() string {
-	return "kv"
+// Error implements the Query interface
+func (kv KV) Error() error {
+	return nil
 }

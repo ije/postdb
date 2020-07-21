@@ -38,7 +38,7 @@ func (id ObjectID) IsNil() bool {
 	return id == nilObjectID
 }
 
-// QueryType implements the Query interface
-func (id ObjectID) QueryType() string {
-	return "id"
+// Error implements the Query interface
+func (id ObjectID) Error() error {
+	return nil
 }
