@@ -216,9 +216,17 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 					}
 				} else {
 					for key := range res.KVKeys {
-						v := postkvBucket.Get([]byte(key))
-						if v != nil {
-							post.KV[key] = v
+						if kl := len(key); kl > 1 && strings.HasSuffix(key, "*") {
+							c := postkvBucket.Cursor()
+							prefix := []byte(key[:kl-1])
+							for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
+								post.KV[string(k)] = v
+							}
+						} else {
+							v := postkvBucket.Get([]byte(key))
+							if v != nil {
+								post.KV[key] = v
+							}
 						}
 					}
 				}
@@ -265,9 +273,17 @@ func (tx *Tx) Get(qs ...q.Query) (*q.Post, error) {
 				}
 			} else {
 				for key := range res.KVKeys {
-					v := postkvBucket.Get([]byte(key))
-					if v != nil {
-						post.KV[key] = v
+					if kl := len(key); kl > 1 && strings.HasSuffix(key, "*") {
+						c := postkvBucket.Cursor()
+						prefix := []byte(key[:kl-1])
+						for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
+							post.KV[string(k)] = v
+						}
+					} else {
+						v := postkvBucket.Get([]byte(key))
+						if v != nil {
+							post.KV[key] = v
+						}
 					}
 				}
 			}
