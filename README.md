@@ -57,9 +57,9 @@ db.WriteTo(w)
 as server of C/S:
 
 ```go
-// create a new server
+// create a server
 s := &postdb.Server{
-    DBDir:  "path",
+    DBPath: "path",
     Port:   9000,
 }
 
