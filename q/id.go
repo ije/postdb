@@ -1,44 +1,22 @@
 package q
 
 import (
-	"github.com/rs/xid"
+	"crypto/rand"
 )
 
-// ObjectID represents a unique object id powered by xid(https://github.com/rs/xid)
-type ObjectID [12]byte
+const (
+	idLen   = 20
+	idChars = "abcdefghijklmnopqrstuv0123456789"
+)
 
-var nilObjectID ObjectID
-
-// NewID returns a new ID
-func NewID() ObjectID {
-	return ObjectID(xid.New())
-}
-
-// ID returns an ObjectID
-func ID(id string) ObjectID {
-	xid, err := xid.FromString(id)
-	if err != nil {
-		return nilObjectID
+// NewID returns a new ID string
+func NewID() string {
+	r := make([]byte, idLen)
+	buf := make([]byte, idLen)
+	rand.Read(r)
+	buf[0] = idChars[r[0]%22] // always start with char [a-v]
+	for i := 1; i < idLen; i++ {
+		buf[i] = idChars[r[i]%32]
 	}
-	return ObjectID(xid)
-}
-
-// String returns a base32 hex lowercased with no padding representation of the id (char set is 0-9, a-v).
-func (id ObjectID) String() string {
-	return xid.ID(id).String()
-}
-
-// Bytes returns the byte array representation of `ID`
-func (id ObjectID) Bytes() []byte {
-	return id[:]
-}
-
-// IsNil returns true if this is a "nil" ID
-func (id ObjectID) IsNil() bool {
-	return id == nilObjectID
-}
-
-// Error implements the Query interface
-func (id ObjectID) Error() error {
-	return nil
+	return string(buf)
 }

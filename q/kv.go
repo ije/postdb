@@ -25,7 +25,17 @@ func (kv KV) Del(key string) {
 	delete(kv, key)
 }
 
-// Error implements the Query interface
-func (kv KV) Error() error {
-	return nil
+// Apply implements the Query interface
+func (kv KV) Apply(p *Post) {
+	if p.KV == nil {
+		p.KV = KV{}
+	}
+	for k, v := range kv {
+		if len(k) > 0 && v != nil {
+			p.KV[k] = v
+		}
+	}
 }
+
+// Resolve implements the Query interface
+func (kv KV) Resolve(r *Resolver) {}

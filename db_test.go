@@ -18,7 +18,7 @@ func TestDB(t *testing.T) {
 	defer db.Close()
 
 	// flush
-	_, err = db.Delete(q.Tags("世界"))
+	_, err = db.Delete(q.Owner("admin"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,7 +28,7 @@ func TestDB(t *testing.T) {
 			q.Alias(fmt.Sprintf("hello-world-%d", i+1)),
 			q.Status(1),
 			q.Owner("admin"),
-			q.Tags("hello", "world", "世界"),
+			q.Tags("hello", "world"),
 			q.KV{
 				"title": []byte(fmt.Sprintf("Hello World #%d", i+1)),
 				"date":  []byte(time.Now().Format(http.TimeFormat)),
@@ -42,12 +42,11 @@ func TestDB(t *testing.T) {
 	postZh, err := db.Put(
 		q.Alias("hello-world-cn"),
 		q.Status(1),
-		q.Owner("admin"),
-		q.Tags("hello", "world", "世界"),
+		q.Owner("abc"),
+		q.Tags("hello", "world"),
 		q.KV{
 			"title": []byte("Hello World!"),
 			"date":  []byte(time.Now().Format(http.TimeFormat)),
-			"k":     []byte("v1"),
 		},
 	)
 	if err != nil {
@@ -61,38 +60,47 @@ func TestDB(t *testing.T) {
 	toBe(t, "posts len", len(posts), 11)
 
 	_, err = db.Update(
-		postZh.ID,
+		q.ID(postZh.ID),
 		q.Alias("hello-world-zh"),
 		q.Status(2),
-		q.Owner("adminisitor"),
+		q.Owner("admin"),
 		q.Tags("你好", "世界"),
 		q.KV{
-			"title": []byte("你好世界！"),
-			"date":  []byte(time.Now().Format(http.TimeFormat + " :)")),
-			"k":     []byte("v2"),
+			"title":  []byte("你好世界！"),
+			"date":   []byte(time.Now().Format(http.TimeFormat + " :)")),
+			"newkey": []byte("v"),
 		},
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	postZh, err = db.Get(postZh.ID, q.K("*"))
+	postZh, err = db.Get(q.ID(postZh.ID), q.K("*"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	toBe(t, "postZh.Alias", postZh.Alias, "hello-world-zh")
 	toBe(t, "postZh.Status", postZh.Status, uint8(2))
-	toBe(t, "postZh.Owner", postZh.Owner, "adminisitor")
+	toBe(t, "postZh.Owner", postZh.Owner, "admin")
 	toBe(t, "postZh.Tags", strings.Join(postZh.Tags, " "), "你好 世界")
 	toBe(t, "postZh.KV.title", string(postZh.KV["title"]), "你好世界！")
 	toBe(t, "postZh.KV.date", strings.HasSuffix(string(postZh.KV["date"]), ":)"), true)
-	toBe(t, "postZh.KV.k", string(postZh.KV["k"]), "v2")
+	toBe(t, "postZh.KV.newkey", string(postZh.KV["newkey"]), "v")
 
 	posts, err = db.List(q.Tags("world"), q.Limit(5), q.Order(q.ASC), q.K("*"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	toBe(t, "posts len", len(posts), 5)
+	for i, post := range posts {
+		t.Logf(`%d. %s/%s "%s" %s`, i+1, post.ID, post.Alias, string(post.KV.Get("title")), string(post.KV.Get("date")))
+	}
+
+	posts, err = db.List(q.Tags("世界"), q.K("*"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	toBe(t, "posts len", len(posts), 1)
 	for i, post := range posts {
 		t.Logf(`%d. %s/%s "%s" %s`, i+1, post.ID, post.Alias, string(post.KV.Get("title")), string(post.KV.Get("date")))
 	}

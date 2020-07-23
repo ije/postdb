@@ -36,7 +36,7 @@ func Open(path string, mode os.FileMode) (db *DB, err error) {
 		}
 		indexBucket := tx.Bucket(postindexKey)
 		for _, key := range [][]byte{
-			postaliasKey,
+			postuidKey,
 			postownerKey,
 			posttagKey,
 		} {

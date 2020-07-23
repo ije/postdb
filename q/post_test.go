@@ -17,7 +17,7 @@ func TestPostMeta(t *testing.T) {
 			"date":  []byte("2020-01-01"),
 		},
 	} {
-		post.ApplyQuery(q)
+		q.Apply(post)
 	}
 
 	metadata := post.MetaData()
@@ -28,7 +28,8 @@ func TestPostMeta(t *testing.T) {
 
 	toBe(t, "post.KV.title", string(post.KV["title"]), "Hello World!")
 	toBe(t, "post.KV.date", string(post.KV["date"]), "2020-01-01")
-	toBe(t, "_post.ID", _post.ID.String(), post.ID.String())
+	toBe(t, "_post.PKey", _post.PKey.String(), post.PKey.String())
+	toBe(t, "_post.ID", _post.ID, post.ID)
 	toBe(t, "_post.Alias", _post.Alias, post.Alias)
 	toBe(t, "_post.ACL", _post.Status, post.Status)
 	toBe(t, "_post.Owner", _post.Owner, post.Owner)

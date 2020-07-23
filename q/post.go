@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"time"
+
+	"github.com/rs/xid"
 )
 
 var (
@@ -13,7 +15,8 @@ var (
 
 // A Post specifies a post of postdb.
 type Post struct {
-	ID     ObjectID
+	PKey   xid.ID
+	ID     string
 	Alias  string
 	Status uint8
 	Owner  string
@@ -24,45 +27,55 @@ type Post struct {
 
 // NewPost returns a new post.
 func NewPost() *Post {
-	return &Post{
+	post := &Post{
+		PKey:   xid.New(),
 		ID:     NewID(),
 		Status: 1,
 		Crtime: uint64(time.Now().UnixNano() / 1e6),
 		Tags:   []string{},
 		KV:     KV{},
 	}
+	return post
 }
 
 // PostFromBytes parses a post from bytes.
 func PostFromBytes(data []byte) (*Post, error) {
 	dl := len(data)
-	if dl < 29 {
+	if dl < 49 {
 		return nil, errPostMeta
 	}
 
-	for i, l := 0, len(postPrefix); i < l; i++ {
-		if data[i] != postPrefix[i] {
+	for i, c := range postPrefix {
+		if data[i] != c {
 			return nil, errPostMeta
 		}
 	}
 
-	var v byte
-	for j := 0; j < dl-1; j++ {
-		v += data[j]
+	var checksum byte
+	for i := 0; i < dl-1; i++ {
+		checksum += data[i]
 	}
-	if data[dl-1] != v {
+	if data[dl-1] != checksum {
 		return nil, errPostMeta
 	}
 
-	var id ObjectID
-	copy(id[:], data[4:16])
+	i := 4
 
-	status := data[16]
-	crtime := binary.BigEndian.Uint64(data[17:25])
-	aliasLen := int(data[25])
-	ownerLen := int(data[26])
-	tagN := int(data[27])
-	i := 28
+	var pkey xid.ID
+	copy(pkey[:], data[i:i+12])
+	i += 12
+	id := string(data[i : i+20])
+	i += 20
+	crtime := binary.BigEndian.Uint64(data[i : i+8])
+	i += 8
+	status := data[i]
+	i++
+	aliasLen := int(data[i])
+	i++
+	ownerLen := int(data[i])
+	i++
+	tagN := int(data[i])
+	i++
 	alias := data[i : i+aliasLen]
 	i += aliasLen
 	owner := data[i : i+ownerLen]
@@ -79,6 +92,7 @@ func PostFromBytes(data []byte) (*Post, error) {
 	}
 
 	return &Post{
+		PKey:   pkey,
 		ID:     id,
 		Alias:  string(alias),
 		Owner:  string(owner),
@@ -89,9 +103,10 @@ func PostFromBytes(data []byte) (*Post, error) {
 	}, nil
 }
 
-// Clone clones the post.
+// Clone clones the post
 func (p *Post) Clone(qs ...Query) *Post {
 	copy := &Post{
+		PKey:   p.PKey,
 		ID:     p.ID,
 		Alias:  p.Alias,
 		Owner:  p.Owner,
@@ -111,23 +126,32 @@ func (p *Post) Clone(qs ...Query) *Post {
 
 // MetaData returns the meta data of post.
 // data structure:
-// "POST"(4) | id(12) | status(1) | crtime(8) | aliasLen(1) | ownerLen(1) | tagsN(1) | alias(aliasLen) | owner(ownerLen) | tags([1+tagLen]*tagN) | checksum(1)
+// "POST"(4) | pkey(12) | id(20) | crtime(8) | status(1) | aliasLen(1) | ownerLen(1) | tagsN(1) | alias(aliasLen) | owner(ownerLen) | tags([1+tagLen]*tagN) | checksum(1)
 func (p *Post) MetaData() []byte {
 	aliasLen := len(p.Alias)
 	ownerLen := len(p.Owner)
-	metaLen := 29 + aliasLen + ownerLen
+	metaLen := 49 + aliasLen + ownerLen
 	for _, tag := range p.Tags {
 		metaLen += 1 + len(tag)
 	}
 	buf := make([]byte, metaLen)
+	i := 0
 	copy(buf, postPrefix)
-	copy(buf[4:], p.ID.Bytes())
-	buf[16] = byte(p.Status)
-	binary.BigEndian.PutUint64(buf[17:], p.Crtime)
-	buf[25] = byte(aliasLen)
-	buf[26] = byte(ownerLen)
-	buf[27] = byte(len(p.Tags))
-	i := 28
+	i += 4
+	copy(buf[i:], p.PKey.Bytes())
+	i += 12
+	copy(buf[i:], []byte(p.ID))
+	i += 20
+	binary.BigEndian.PutUint64(buf[i:], p.Crtime)
+	i += 8
+	buf[i] = byte(p.Status)
+	i++
+	buf[i] = byte(aliasLen)
+	i++
+	buf[i] = byte(ownerLen)
+	i++
+	buf[i] = byte(len(p.Tags))
+	i++
 	if aliasLen > 0 {
 		copy(buf[i:], []byte(p.Alias))
 		i += aliasLen
@@ -142,37 +166,10 @@ func (p *Post) MetaData() []byte {
 		copy(buf[i+1:], []byte(tag))
 		i += 1 + tl
 	}
-	var v byte
+	var checksum byte
 	for j := 0; j < metaLen-1; j++ {
-		v += buf[j]
+		checksum += buf[j]
 	}
-	buf[i] = v
+	buf[i] = checksum
 	return buf
-}
-
-// ApplyQuery applies a query.
-func (p *Post) ApplyQuery(query Query) {
-	switch q := query.(type) {
-	case aliasQuery:
-		p.Alias = string(q)
-
-	case ownerQuery:
-		p.Owner = string(q)
-
-	case statusQuery:
-		p.Status = uint8(q)
-
-	case tagsQuery:
-		p.Tags = q
-
-	case KV:
-		if p.KV == nil {
-			p.KV = KV{}
-		}
-		for k, v := range q {
-			if len(k) > 0 && v != nil {
-				p.KV[k] = v
-			}
-		}
-	}
 }

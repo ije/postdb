@@ -1,50 +1,58 @@
 package q
 
 import (
-	"encoding/binary"
 	"strings"
 )
 
-// A Setter inferface
-// type Setter interface {
-// 	Set(*Post)
-// 	Error() error
-// }
-
-// A Query inferface
-// type Query interface {
-// 	Apply(*Resolver)
-// 	Error() error
-// }
+// Resolver to save query resolves
+type Resolver struct {
+	ID              string
+	IDs             []string
+	Alias           string
+	Owner           string
+	Status          uint8
+	HasStatus       bool
+	Tags            map[string]struct{}
+	Keys            map[string]struct{}
+	KeysHasWildcard bool
+	After           string
+	Limit           uint32
+	Order           uint8
+}
 
 // A Query inferface
 type Query interface {
-	Error() error
+	Resolve(*Resolver)
+	Apply(*Post)
 }
 
-type idsQuery [][]byte
+type idQuery string
+type idsQuery []string
 type aliasQuery string
 type ownerQuery string
 type statusQuery uint8
 type tagsQuery []string
 type keysQuery []string
-type afterQuery [13]byte
+type afterQuery string
 type limitQuery uint32
-type rangeQuery [17]byte
 type orderQuery uint8
+
+// ID returns an id Query
+func ID(id string) Query {
+	return idQuery(id)
+}
 
 // IDs returns a IDs Query
 func IDs(ids ...string) Query {
 	set := map[string]struct{}{}
-	a := make([][]byte, len(ids))
+	a := make([]string, len(ids))
 	i := 0
 	for _, id := range ids {
-		xid := ID(id)
-		if !xid.IsNil() {
+		if id != "" {
 			_, ok := set[id]
 			if !ok {
 				set[id] = struct{}{}
-				a[i] = xid.Bytes()
+				a[i] = id
 				i++
 			}
 		}
@@ -54,12 +62,22 @@ func IDs(ids ...string) Query {
 
 // Alias returns a alias Query
 func Alias(alias string) Query {
-	return aliasQuery(strings.ReplaceAll(strings.ToLower(strings.TrimSpace(alias)), " ", "-"))
+	p := strings.Split(alias, " ")
+	a := make([]string, len(p))
+	i := 0
+	for _, s := range p {
+		s = strings.ToLower(strings.TrimSpace(alias))
+		if s != "" {
+			a[i] = s
+			i++
+		}
+	}
+	return aliasQuery(strings.Join(a[:i], "-"))
 }
 
 // Owner returns a owner Query
 func Owner(name string) Query {
-	return ownerQuery(strings.TrimSpace(name))
+	return ownerQuery(name)
 }
 
 // Status returns a status Query
@@ -112,13 +130,7 @@ func K(keys ...string) Query {
 
 // After returns a after Query
 func After(id string) Query {
-	var q afterQuery
-	xid := ID(id)
-	if !xid.IsNil() {
-		q[0] = 1
-		copy(q[1:], xid.Bytes())
-	}
-	return q
+	return afterQuery(id)
 }
 
 // Limit returns a limit Query
@@ -126,73 +138,109 @@ func Limit(limit uint8) Query {
 	return limitQuery(limit)
 }
 
-// Range returns a range Query.
-//
-// `postdb.GetPosts(q.Range("bs7pobh8d3b21ducpaqg", 100))` equals `postdb.GetPosts(q.After("bs7pobh8d3b21ducpaqg"), q.Limit(100))`
-func Range(after string, limit uint32) Query {
-	var q rangeQuery
-	if len(after) == 20 && limit > 0 {
-		xid := ID(after)
-		if !xid.IsNil() {
-			q[0] = 1
-			copy(q[1:], xid.Bytes())
-			binary.BigEndian.PutUint32(q[13:], limit)
-		}
-	}
-	return q
-}
-
 // Order returns a order Query
 func Order(order uint8) Query {
 	return orderQuery(order)
 }
 
-// Error implements the Query interface
-func (q idsQuery) Error() error {
-	return nil
+// Apply implements the Query interface
+func (q idQuery) Apply(p *Post) {}
+
+// Resolve implements the Query interface
+func (q idQuery) Resolve(r *Resolver) {
+	r.ID = string(q)
 }
 
-// Error implements the Query interface
-func (q aliasQuery) Error() error {
-	return nil
+// Apply implements the Query interface
+func (q idsQuery) Apply(p *Post) {}
+
+// Resolve implements the Query interface
+func (q idsQuery) Resolve(r *Resolver) {
+	r.IDs = q
 }
 
-// Error implements the Query interface
-func (q ownerQuery) Error() error {
-	return nil
+// Apply implements the Query interface
+func (q aliasQuery) Apply(p *Post) {
+	p.Alias = string(q)
 }
 
-// Error implements the Query interface
-func (status statusQuery) Error() error {
-	return nil
+// Resolve implements the Query interface
+func (q aliasQuery) Resolve(r *Resolver) {
+	r.Alias = string(q)
 }
 
-// Error implements the Query interface
-func (q tagsQuery) Error() error {
-	return nil
+// Apply implements the Query interface
+func (q ownerQuery) Apply(p *Post) {
+	p.Owner = string(q)
 }
 
-// Error implements the Query interface
-func (q keysQuery) Error() error {
-	return nil
+// Resolve implements the Query interface
+func (q ownerQuery) Resolve(r *Resolver) {
+	r.Owner = string(q)
 }
 
-// Error implements the Query interface
-func (q rangeQuery) Error() error {
-	return nil
+// Apply implements the Query interface
+func (q statusQuery) Apply(p *Post) {
+	p.Status = uint8(q)
 }
 
-// Error implements the Query interface
-func (q afterQuery) Error() error {
-	return nil
+// Resolve implements the Query interface
+func (q statusQuery) Resolve(r *Resolver) {
+	r.Status = uint8(q)
+	r.HasStatus = true
 }
 
-// Error implements the Query interface
-func (q limitQuery) Error() error {
-	return nil
+// Apply implements the Query interface
+func (q tagsQuery) Apply(p *Post) {
+	p.Tags = q
 }
 
-// Error implements the Query interface
-func (order orderQuery) Error() error {
-	return nil
+// Resolve implements the Query interface
+func (q tagsQuery) Resolve(r *Resolver) {
+	if r.Tags == nil {
+		r.Tags = map[string]struct{}{}
+	}
+	for _, tag := range q {
+		r.Tags[tag] = struct{}{}
+	}
+}
+
+// Apply implements the Query interface
+func (q keysQuery) Apply(p *Post) {}
+
+// Resolve implements the Query interface
+func (q keysQuery) Resolve(r *Resolver) {
+	if r.Keys == nil {
+		r.Keys = map[string]struct{}{}
+	}
+	for _, s := range q {
+		if s == "*" {
+			r.KeysHasWildcard = true
+		}
+		r.Keys[s] = struct{}{}
+	}
+}
+
+// Apply implements the Query interface
+func (q afterQuery) Apply(p *Post) {}
+
+// Resolve implements the Query interface
+func (q afterQuery) Resolve(r *Resolver) {
+	r.After = string(q)
+}
+
+// Apply implements the Query interface
+func (q limitQuery) Apply(p *Post) {}
+
+// Resolve implements the Query interface
+func (q limitQuery) Resolve(r *Resolver) {
+	r.Limit = uint32(q)
+}
+
+// Apply implements the Query interface
+func (q orderQuery) Apply(p *Post) {}
+
+// Resolve implements the Query interface
+func (q orderQuery) Resolve(r *Resolver) {
+	r.Order = uint8(q)
 }
