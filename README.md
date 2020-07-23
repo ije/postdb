@@ -29,13 +29,16 @@ db.List()
 // get posts with query
 db.List(q.Tags("tag"), q.Limit(100), q.Order(q.DESC), q.K("title", "thumb"))
 
-// get post by id without kv
+// get post without kv
 db.Get(q.ID("id"))
 
-// get post by id with specified kv
+// get post with specified kv
 db.Get(q.ID("id"), q.K("title", "content"))
 
-// get post by id with full kv
+// get post with prefixed kv
+db.Get(q.ID("id"), q.K("title_*")) // match key in title_en,title_zh,title_de...
+
+// get post with full kv
 db.Get(q.ID("id"), q.K("*")))
 
 // add a new post
