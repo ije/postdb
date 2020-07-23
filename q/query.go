@@ -8,7 +8,6 @@ import (
 type Resolver struct {
 	ID              string
 	IDs             []string
-	Alias           string
 	Owner           string
 	Status          uint8
 	HasStatus       bool
@@ -165,9 +164,7 @@ func (q aliasQuery) Apply(p *Post) {
 }
 
 // Resolve implements the Query interface
-func (q aliasQuery) Resolve(r *Resolver) {
-	r.Alias = string(q)
-}
+func (q aliasQuery) Resolve(r *Resolver) {}
 
 // Apply implements the Query interface
 func (q ownerQuery) Apply(p *Post) {

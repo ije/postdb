@@ -42,12 +42,8 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 		}
 	}
 
-	if len(res.ID) > 0 || len(res.Alias) > 0 {
-		id := []byte(res.ID)
-		if len(id) == 0 {
-			id = []byte(res.Alias)
-		}
-		pkey := uidIndexBucket.Get(id)
+	if len(res.ID) > 0 {
+		pkey := uidIndexBucket.Get([]byte(res.ID))
 		if pkey != nil {
 			v := metaBucket.Get(pkey)
 			if v != nil {
@@ -253,13 +249,9 @@ func (tx *Tx) Get(qs ...q.Query) (*q.Post, error) {
 	}
 
 	var metaData []byte
-	if len(res.ID) > 0 || len(res.Alias) > 0 {
-		id := []byte(res.ID)
-		if len(id) == 0 {
-			id = []byte(res.Alias)
-		}
+	if len(res.ID) > 0 {
 		uidIndexBucket := tx.t.Bucket(postindexKey).Bucket(postuidKey)
-		pkey := uidIndexBucket.Get(id)
+		pkey := uidIndexBucket.Get([]byte(res.ID))
 		if pkey != nil {
 			metaData = tx.t.Bucket(postmetaKey).Get(pkey)
 		}

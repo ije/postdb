@@ -11,7 +11,6 @@ func TestQuery(t *testing.T) {
 	for _, q := range []Query{
 		ID(id),
 		IDs(id, aid),
-		Alias("hello-world"),
 		Owner("admin"),
 		Status(123),
 		Tags("hello", "world"),
@@ -26,7 +25,6 @@ func TestQuery(t *testing.T) {
 
 	toBe(t, "ID", res.ID, id)
 	toBe(t, "IDs", len(res.IDs), 2)
-	toBe(t, "Slug", res.Alias, "hello-world")
 	toBe(t, "Owner", res.Owner, "admin")
 	toBe(t, "Status", res.Status, uint8(123))
 	toBe(t, "Tags", len(res.Tags), 3)
