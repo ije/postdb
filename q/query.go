@@ -14,6 +14,8 @@ type Resolver struct {
 	Tags            map[string]struct{}
 	Keys            map[string]struct{}
 	KeysHasWildcard bool
+	MoveToTop       bool
+	MoveTo          string
 	After           string
 	Limit           uint32
 	Order           uint8
@@ -65,7 +67,7 @@ func Alias(alias string) Query {
 	a := make([]string, len(p))
 	i := 0
 	for _, s := range p {
-		s = strings.ToLower(strings.TrimSpace(alias))
+		s = strings.ToLower(strings.TrimSpace(s))
 		if s != "" {
 			a[i] = s
 			i++
