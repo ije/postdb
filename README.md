@@ -47,6 +47,9 @@ db.Put(q.Alias("alias"), q.Tags("tag1", "tag2"), q.KV{"k": []byte("v")})
 // update the existing post
 db.Update(q.ID("id"), q.KV{"k2": []byte("v2")})
 
+// move the existing post
+db.MoveTo(q.ID("id"), q.Anchor("id"))
+
 // delete the existing post kv
 db.DeleteKV(q.ID("id"), q.K("k2"))
 
