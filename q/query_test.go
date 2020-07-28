@@ -16,7 +16,7 @@ func TestQuery(t *testing.T) {
 		Tags("hello", "world"),
 		Tags("world", "世界"),
 		K("title", "content", "*", "content"),
-		After(aid),
+		Offset(aid),
 		Limit(100),
 		Order(DESC),
 	} {
@@ -29,8 +29,8 @@ func TestQuery(t *testing.T) {
 	toBe(t, "Status", res.Status, uint8(123))
 	toBe(t, "Tags", len(res.Tags), 3)
 	toBe(t, "Keys", len(res.Keys), 3)
-	toBe(t, "KeysHasWildcard", res.KeysHasWildcard, true)
-	toBe(t, "Aftar", res.After, aid)
+	toBe(t, "HasWildcardKey", res.HasWildcardKey, true)
+	toBe(t, "Offset", res.Offset, aid)
 	toBe(t, "Limit", res.Limit, uint32(100))
 	toBe(t, "Order", res.Order, DESC)
 

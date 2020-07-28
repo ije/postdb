@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/postui/postdb/q"
 	bolt "go.etcd.io/bbolt"
@@ -34,10 +35,10 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 	queryOwner := len(res.Owner) > 0
 	orderASC := res.Order >= q.ASC
 
-	var afterPkey []byte
-	if len(res.After) > 0 {
-		afterPkey = uidIndexBucket.Get([]byte(res.After))
-		if afterPkey == nil {
+	var offsetPkey []byte
+	if len(res.Offset) > 0 {
+		offsetPkey = uidIndexBucket.Get([]byte(res.Offset))
+		if offsetPkey == nil {
 			return
 		}
 	}
@@ -96,8 +97,8 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 	} else {
 		c := metaBucket.Cursor()
 		var k, v []byte
-		if afterPkey != nil {
-			k, v = c.Seek(afterPkey)
+		if offsetPkey != nil {
+			k, v = c.Seek(offsetPkey)
 		} else {
 			if orderASC {
 				k, v = c.First()
@@ -138,9 +139,9 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 				break
 			}
 
-			if orderASC && afterPkey != nil {
+			if orderASC && offsetPkey != nil {
 				for {
-					if bytes.Compare(k[len(k)-12:], afterPkey) <= 0 {
+					if bytes.Compare(k[len(k)-12:], offsetPkey) <= 0 {
 						k, _ = cur.Next()
 						if !ok(k) {
 							break
@@ -156,7 +157,7 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 					if k == nil {
 						k, _ = cur.Last()
 						break
-					} else if len(k) != len(prefix)+12 || !bytes.HasPrefix(k, prefix) || (afterPkey != nil && bytes.Compare(k[len(k)-12:], afterPkey) >= 0) {
+					} else if len(k) != len(prefix)+12 || !bytes.HasPrefix(k, prefix) || (offsetPkey != nil && bytes.Compare(k[len(k)-12:], offsetPkey) >= 0) {
 						k, _ = cur.Prev()
 						break
 					}
@@ -213,7 +214,7 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 		for _, post := range posts {
 			postkvBucket := kvBucket.Bucket([]byte(post.ID))
 			if postkvBucket != nil {
-				if res.KeysHasWildcard {
+				if res.HasWildcardKey {
 					c := postkvBucket.Cursor()
 					for k, v := c.First(); k != nil; k, v = c.Next() {
 						post.KV[string(k)] = v
@@ -268,7 +269,7 @@ func (tx *Tx) Get(qs ...q.Query) (*q.Post, error) {
 	if len(res.Keys) > 0 {
 		postkvBucket := tx.t.Bucket(postkvKey).Bucket([]byte(post.ID))
 		if postkvBucket != nil {
-			if res.KeysHasWildcard {
+			if res.HasWildcardKey {
 				c := postkvBucket.Cursor()
 				for k, v := c.First(); k != nil; k, v = c.Next() {
 					post.KV[string(k)] = v
@@ -459,13 +460,6 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 		}
 	}
 
-	if shouldUpdateMeta {
-		err = metaBucket.Put(copy.PKey.Bytes(), copy.MetaData())
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if len(copy.KV) > 0 {
 		postkvBucket := kvBucket.Bucket([]byte(copy.ID))
 		for k, v := range copy.KV {
@@ -474,16 +468,32 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 				return nil, err
 			}
 		}
+		if !shouldUpdateMeta {
+			shouldUpdateMeta = true
+		}
+	}
+
+	if shouldUpdateMeta {
+		copy.Modtime = uint32(time.Now().Unix())
+		err = metaBucket.Put(copy.PKey.Bytes(), copy.MetaData())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return copy, nil
 }
 
+// MoveTo move the post
+func (tx *Tx) MoveTo(qs ...q.Query) error {
+	return nil
+}
+
 // DeleteKV deletes the post kv
-func (tx *Tx) DeleteKV(qs ...q.Query) (n int, err error) {
+func (tx *Tx) DeleteKV(qs ...q.Query) error {
 	post, err := tx.Get(qs...)
 	if err != nil {
-		return
+		return err
 	}
 
 	var res q.Resolver
@@ -496,16 +506,15 @@ func (tx *Tx) DeleteKV(qs ...q.Query) (n int, err error) {
 		postkvBucket := kvBucket.Bucket([]byte(post.ID))
 		if postkvBucket != nil {
 			for key := range res.Keys {
-				err = postkvBucket.Delete([]byte(key))
+				err := postkvBucket.Delete([]byte(key))
 				if err != nil {
-					return
+					return err
 				}
-				n++
 			}
 		}
 	}
 
-	return
+	return nil
 }
 
 // Delete deletes the post

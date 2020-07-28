@@ -87,7 +87,7 @@ func TestDB(t *testing.T) {
 	toBe(t, "postZh.KV.date", strings.HasSuffix(string(postZh.KV["date"]), ":)"), true)
 	toBe(t, "postZh.KV.newkey", string(postZh.KV["newkey"]), "v")
 
-	posts, err = db.List(q.Tags("world"), q.After("hello-world-3"), q.Limit(5), q.Order(q.ASC), q.K("*"))
+	posts, err = db.List(q.Tags("world"), q.Offset("hello-world-3"), q.Limit(5), q.Order(q.ASC), q.K("*"))
 	if err != nil {
 		t.Fatal(err)
 	}

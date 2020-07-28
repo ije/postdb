@@ -6,19 +6,17 @@ import (
 
 // Resolver to save query resolves
 type Resolver struct {
-	ID              string
-	IDs             []string
-	Owner           string
-	Status          uint8
-	HasStatus       bool
-	Tags            map[string]struct{}
-	Keys            map[string]struct{}
-	KeysHasWildcard bool
-	MoveToTop       bool
-	MoveTo          string
-	After           string
-	Limit           uint32
-	Order           uint8
+	ID             string
+	IDs            []string
+	Owner          string
+	Status         uint8
+	HasStatus      bool
+	Tags           map[string]struct{}
+	Keys           map[string]struct{}
+	HasWildcardKey bool
+	Offset         string
+	Limit          uint32
+	Order          uint8
 }
 
 // A Query inferface
@@ -34,7 +32,7 @@ type ownerQuery string
 type statusQuery uint8
 type tagsQuery []string
 type keysQuery []string
-type afterQuery string
+type offsetQuery string
 type limitQuery uint32
 type orderQuery uint8
 
@@ -129,13 +127,13 @@ func K(keys ...string) Query {
 	return Keys(keys...)
 }
 
-// After returns a after Query
-func After(id string) Query {
-	return afterQuery(id)
+// Offset returns an offset Query
+func Offset(id string) Query {
+	return offsetQuery(id)
 }
 
 // Limit returns a limit Query
-func Limit(limit uint8) Query {
+func Limit(limit uint32) Query {
 	return limitQuery(limit)
 }
 
@@ -214,18 +212,18 @@ func (q keysQuery) Resolve(r *Resolver) {
 	}
 	for _, s := range q {
 		if s == "*" {
-			r.KeysHasWildcard = true
+			r.HasWildcardKey = true
 		}
 		r.Keys[s] = struct{}{}
 	}
 }
 
 // Apply implements the Query interface
-func (q afterQuery) Apply(p *Post) {}
+func (q offsetQuery) Apply(p *Post) {}
 
 // Resolve implements the Query interface
-func (q afterQuery) Resolve(r *Resolver) {
-	r.After = string(q)
+func (q offsetQuery) Resolve(r *Resolver) {
+	r.Offset = string(q)
 }
 
 // Apply implements the Query interface
