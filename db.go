@@ -36,7 +36,7 @@ func Open(path string, mode os.FileMode) (db *DB, err error) {
 		}
 		indexBucket := tx.Bucket(postindexKey)
 		for _, key := range [][]byte{
-			postuidKey,
+			postidKey,
 			postownerKey,
 			posttagKey,
 		} {
@@ -138,6 +138,27 @@ func (db *DB) DeleteKV(qs ...q.Query) error {
 	defer tx.Rollback()
 
 	err = tx.DeleteKV(qs...)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// MoveTo moves the post
+func (db *DB) MoveTo(qs ...q.Query) error {
+	tx, err := db.Begin(true)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = tx.MoveTo(qs...)
 	if err != nil {
 		return err
 	}

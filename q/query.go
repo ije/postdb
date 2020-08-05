@@ -1,23 +1,16 @@
 package q
 
-import (
-	"strings"
+const (
+	// DESC specifies the order of DESC
+	DESC uint8 = iota
+	// ASC specifies the order of ASC
+	ASC
+	// todo:
+	// RANK_DESC specifies the order of Rank
+	// RANK_DESC
+	// RANK_ASC specifies the order of Rank
+	// RANK_ASC
 )
-
-// Resolver to save query resolves
-type Resolver struct {
-	ID             string
-	IDs            []string
-	Owner          string
-	Status         uint8
-	HasStatus      bool
-	Tags           map[string]struct{}
-	Keys           map[string]struct{}
-	HasWildcardKey bool
-	Offset         string
-	Limit          uint32
-	Order          uint8
-}
 
 // A Query inferface
 type Query interface {
@@ -32,9 +25,13 @@ type ownerQuery string
 type statusQuery uint8
 type tagsQuery []string
 type keysQuery []string
+type anchorQuery string
 type offsetQuery string
 type limitQuery uint32
 type orderQuery uint8
+type filterQuery struct {
+	C func(Post) bool
+}
 
 // ID returns an id Query
 func ID(id string) Query {
@@ -43,35 +40,12 @@ func ID(id string) Query {
 
 // IDs returns a IDs Query
 func IDs(ids ...string) Query {
-	set := map[string]struct{}{}
-	a := make([]string, len(ids))
-	i := 0
-	for _, id := range ids {
-		if id != "" {
-			_, ok := set[id]
-			if !ok {
-				set[id] = struct{}{}
-				a[i] = id
-				i++
-			}
-		}
-	}
-	return idsQuery(a[:i])
+	return idsQuery(StringSet(ids))
 }
 
 // Alias returns a alias Query
 func Alias(alias string) Query {
-	p := strings.Split(alias, " ")
-	a := make([]string, len(p))
-	i := 0
-	for _, s := range p {
-		s = strings.ToLower(strings.TrimSpace(s))
-		if s != "" {
-			a[i] = s
-			i++
-		}
-	}
-	return aliasQuery(strings.Join(a[:i], "-"))
+	return aliasQuery(alias)
 }
 
 // Owner returns a owner Query
@@ -86,45 +60,22 @@ func Status(status uint8) Query {
 
 // Tags returns a tags Query
 func Tags(tags ...string) Query {
-	set := map[string]struct{}{}
-	a := make([]string, len(tags))
-	i := 0
-	for _, s := range tags {
-		tag := strings.ToLower(strings.TrimSpace(s))
-		if tag != "" {
-			_, ok := set[tag]
-			if !ok {
-				set[tag] = struct{}{}
-				a[i] = tag
-				i++
-			}
-		}
-	}
-	return tagsQuery(a[:i])
+	return tagsQuery(StringSet(tags))
 }
 
 // Keys returns a keys Query
 func Keys(keys ...string) Query {
-	set := map[string]struct{}{}
-	a := make([]string, len(keys))
-	i := 0
-	for _, s := range keys {
-		key := strings.TrimSpace(s)
-		if key != "" {
-			_, ok := set[key]
-			if !ok {
-				set[key] = struct{}{}
-				a[i] = key
-				i++
-			}
-		}
-	}
-	return keysQuery(a[:i])
+	return keysQuery(StringSet(keys))
 }
 
 // K is a shortcut for Key
 func K(keys ...string) Query {
 	return Keys(keys...)
+}
+
+// Anchor returns a anchor Query
+func Anchor(id string) Query {
+	return anchorQuery(id)
 }
 
 // Offset returns an offset Query
@@ -142,12 +93,17 @@ func Order(order uint8) Query {
 	return orderQuery(order)
 }
 
+// Filter returns a filter Query
+func Filter(fn func(Post) bool) Query {
+	return filterQuery{fn}
+}
+
 // Apply implements the Query interface
 func (q idQuery) Apply(p *Post) {}
 
 // Resolve implements the Query interface
 func (q idQuery) Resolve(r *Resolver) {
-	r.ID = string(q)
+	r.IDs = append(r.IDs, string(q))
 }
 
 // Apply implements the Query interface
@@ -155,7 +111,7 @@ func (q idsQuery) Apply(p *Post) {}
 
 // Resolve implements the Query interface
 func (q idsQuery) Resolve(r *Resolver) {
-	r.IDs = q
+	r.IDs = append(r.IDs, q...)
 }
 
 // Apply implements the Query interface
@@ -183,8 +139,9 @@ func (q statusQuery) Apply(p *Post) {
 
 // Resolve implements the Query interface
 func (q statusQuery) Resolve(r *Resolver) {
-	r.Status = uint8(q)
-	r.HasStatus = true
+	r.Filters = append(r.Filters, func(p Post) bool {
+		return p.Status == uint8(q)
+	})
 }
 
 // Apply implements the Query interface
@@ -194,12 +151,8 @@ func (q tagsQuery) Apply(p *Post) {
 
 // Resolve implements the Query interface
 func (q tagsQuery) Resolve(r *Resolver) {
-	if r.Tags == nil {
-		r.Tags = map[string]struct{}{}
-	}
-	for _, tag := range q {
-		r.Tags[tag] = struct{}{}
-	}
+	tags := append(r.Tags, q...)
+	r.Tags = StringSet(tags)
 }
 
 // Apply implements the Query interface
@@ -207,15 +160,16 @@ func (q keysQuery) Apply(p *Post) {}
 
 // Resolve implements the Query interface
 func (q keysQuery) Resolve(r *Resolver) {
-	if r.Keys == nil {
-		r.Keys = map[string]struct{}{}
-	}
-	for _, s := range q {
-		if s == "*" {
-			r.HasWildcardKey = true
-		}
-		r.Keys[s] = struct{}{}
-	}
+	keys := append(r.Keys, q...)
+	r.Keys = StringSet(keys)
+}
+
+// Apply implements the Query interface
+func (q anchorQuery) Apply(p *Post) {}
+
+// Resolve implements the Query interface
+func (q anchorQuery) Resolve(r *Resolver) {
+	r.Anchor = string(q)
 }
 
 // Apply implements the Query interface
@@ -240,4 +194,12 @@ func (q orderQuery) Apply(p *Post) {}
 // Resolve implements the Query interface
 func (q orderQuery) Resolve(r *Resolver) {
 	r.Order = uint8(q)
+}
+
+// Apply implements the Query interface
+func (f filterQuery) Apply(p *Post) {}
+
+// Resolve implements the Query interface
+func (f filterQuery) Resolve(r *Resolver) {
+	r.Filters = append(r.Filters, f.C)
 }

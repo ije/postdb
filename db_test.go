@@ -92,8 +92,8 @@ func TestDB(t *testing.T) {
 		t.Fatal(err)
 	}
 	toBe(t, "posts len", len(posts), 5)
-	for i, post := range posts {
-		t.Logf(`%d. %s/%s "%s" %s`, i+1, post.ID, post.Alias, string(post.KV.Get("title")), string(post.KV.Get("date")))
+	for _, post := range posts {
+		t.Logf(`%s/%s "%s" %s`, post.ID, post.Alias, string(post.KV.Get("title")), string(post.KV.Get("date")))
 	}
 
 	posts, err = db.List(q.Tags("世界"), q.K("*"))

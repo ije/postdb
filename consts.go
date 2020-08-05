@@ -4,7 +4,7 @@ var (
 	postmetaKey  = []byte("postmeta")
 	postindexKey = []byte("postindex")
 	postkvKey    = []byte("postkv")
-	postuidKey   = []byte("postuid")
+	postidKey    = []byte("postid")
 	postownerKey = []byte("postowner")
 	posttagKey   = []byte("posttag")
 )
