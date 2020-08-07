@@ -4,7 +4,7 @@
 [![GoReport](https://goreportcard.com/badge/github.com/postui/postdb)](https://goreportcard.com/report/github.com/postui/postdb)
 [![MIT](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
-A database to store your posts in [golang](https://golang.org) with [bbolt](https://github.com/etcd-io/bbolt), noSQL.
+A database to store your posts in [Golang](https://golang.org) with [BoltDB](https://github.com/etcd-io/bbolt), noSQL.
 
 
 ## Installing
@@ -14,7 +14,9 @@ go get github.com/postui/postdb
 
 
 ## Usage
+
 as an embedded database:
+
 ```go
 // opening a database
 db, err := postdb.Open("post.db", 0666)
@@ -58,6 +60,27 @@ db.Delete(q.ID("id"))
 
 // backup the entire database
 db.WriteTo(w)
+```
+
+using namespace:
+
+```go
+// opening a database
+db, err := postdb.Open("post.db", 0666)
+if err != nil {
+    return err
+}
+defer db.Close()
+
+// creating a namespace
+ns, err := db.Namespace("name")
+if err != nil {
+    return err
+}
+
+// use the db with namespace
+ns.List()
+...
 ```
 
 as server of C/S:
