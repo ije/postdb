@@ -17,25 +17,3 @@ func StringSet(arr []string) []string {
 	}
 	return a[:i]
 }
-
-// Contains reports whether s is within arr.
-func Contains(arr []string, s string) bool {
-	for _, item := range arr {
-		if item == s {
-			return true
-		}
-	}
-	return false
-}
-
-// ContainsSlice reports whether s is within arr.
-func ContainsSlice(arr []string, s []string) bool {
-	for _, item := range arr {
-		for _, _item := range s {
-			if item != _item {
-				return false
-			}
-		}
-	}
-	return true
-}

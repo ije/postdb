@@ -57,7 +57,7 @@ func TestDB(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	toBe(t, "posts len", len(posts), 11)
+	toBe(t, "posts length", len(posts), 11)
 
 	_, err = db.Update(
 		q.ID(postZh.ID),
@@ -91,7 +91,7 @@ func TestDB(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	toBe(t, "posts len", len(posts), 5)
+	toBe(t, "posts length", len(posts), 5)
 	for _, post := range posts {
 		t.Logf(`%s/%s "%s" %s`, post.ID, post.Alias, string(post.KV.Get("title")), string(post.KV.Get("date")))
 	}
@@ -100,7 +100,7 @@ func TestDB(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	toBe(t, "posts len", len(posts), 1)
+	toBe(t, "posts length", len(posts), 1)
 	for _, post := range posts {
 		t.Logf(`%s/%s "%s" %s`, post.ID, post.Alias, string(post.KV.Get("title")), string(post.KV.Get("date")))
 	}

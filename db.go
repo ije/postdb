@@ -1,6 +1,7 @@
 package postdb
 
 import (
+	"errors"
 	"io"
 	"os"
 	"time"
@@ -11,7 +12,7 @@ import (
 
 // A DB to store posts
 type DB struct {
-	b *bolt.DB
+	bolt *bolt.DB
 }
 
 // Open opens a database at the given path.
@@ -55,14 +56,51 @@ func Open(path string, mode os.FileMode) (db *DB, err error) {
 	return
 }
 
-// Begin starts a new transaction.
-func (db *DB) Begin(writable bool) (*Tx, error) {
-	tx, err := db.b.Begin(writable)
+// Namespace returns the namepace.
+func (db *DB) Namespace(name string) (*NS, error) {
+	if name == "" {
+		return nil, errors.New("empty name")
+	}
+
+	err := db.bolt.Update(func(tx *bolt.Tx) error {
+		for _, key := range [][]byte{
+			postmetaKey,
+			postindexKey,
+			postkvKey,
+		} {
+			_, err := tx.CreateBucketIfNotExists(join([]byte(name), key, 0))
+			if err != nil {
+				return err
+			}
+		}
+		indexBucket := tx.Bucket(join([]byte(name), postindexKey, 0))
+		for _, key := range [][]byte{
+			postidKey,
+			postownerKey,
+			posttagKey,
+		} {
+			_, err := indexBucket.CreateBucketIfNotExists(key)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &Tx{tx}, nil
+	return &NS{name, db}, nil
+}
+
+// Begin starts a new transaction.
+func (db *DB) Begin(writable bool) (*Tx, error) {
+	tx, err := db.bolt.Begin(writable)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Tx{nil, tx}, nil
 }
 
 // List returns some posts
@@ -205,5 +243,5 @@ func (db *DB) WriteTo(w io.Writer) (int64, error) {
 
 // Close releases all database resources.
 func (db *DB) Close() error {
-	return db.b.Close()
+	return db.bolt.Close()
 }
