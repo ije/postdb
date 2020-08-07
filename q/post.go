@@ -29,7 +29,7 @@ type Post struct {
 	Modtime uint32
 	Tags    []string
 	KV      KV
-	// todo: Rank
+	// todo: Rank uint32
 }
 
 // NewPost returns a new post.
