@@ -8,7 +8,7 @@ type Server struct {
 	Port    uint16
 }
 
-func (s *Server) CreateUser(name string, password string) error {
+func (s *Server) CreateUser(name string, password string, acl string) error {
 	return nil
 }
 

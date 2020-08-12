@@ -93,7 +93,7 @@ s := &postdb.Server{
 }
 
 // create a new database user
-s.CreateUser("USERNAME", "PASS")
+s.CreateUser("USERNAME", "PASS", acl)
 
 // start the server
 s.Serve()

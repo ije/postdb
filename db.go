@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/postui/postdb/q"
@@ -12,7 +13,9 @@ import (
 
 // A DB to store posts
 type DB struct {
-	bolt *bolt.DB
+	lock   sync.RWMutex
+	nsPool map[string]*NS
+	bolt   *bolt.DB
 }
 
 // Open opens a database at the given path.
@@ -52,7 +55,10 @@ func Open(path string, mode os.FileMode) (db *DB, err error) {
 		return
 	}
 
-	db = &DB{b}
+	db = &DB{
+		nsPool: map[string]*NS{},
+		bolt:   b,
+	}
 	return
 }
 
@@ -60,6 +66,13 @@ func Open(path string, mode os.FileMode) (db *DB, err error) {
 func (db *DB) Namespace(name string) (*NS, error) {
 	if name == "" {
 		return nil, errors.New("empty name")
+	}
+
+	db.lock.RLock()
+	ns, ok := db.nsPool[name]
+	db.lock.RUnlock()
+	if ok {
+		return ns, nil
 	}
 
 	err := db.bolt.Update(func(tx *bolt.Tx) error {
@@ -90,7 +103,11 @@ func (db *DB) Namespace(name string) (*NS, error) {
 		return nil, err
 	}
 
-	return &NS{name, db}, nil
+	ns = &NS{name, db}
+	db.lock.Lock()
+	db.nsPool[name] = ns
+	db.lock.Unlock()
+	return ns, nil
 }
 
 // Begin starts a new transaction.
