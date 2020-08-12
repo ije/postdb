@@ -64,24 +64,24 @@ func (ns *NS) Put(qs ...q.Query) (*q.Post, error) {
 }
 
 // Update updates the post
-func (ns *NS) Update(qs ...q.Query) (*q.Post, error) {
+func (ns *NS) Update(qs ...q.Query) error {
 	tx, err := ns.Begin(true)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer tx.Rollback()
 
-	post, err := tx.Update(qs...)
+	err = tx.Update(qs...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return post, nil
+	return nil
 }
 
 // DeleteKV deletes the post kv

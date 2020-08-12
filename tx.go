@@ -353,7 +353,7 @@ func (tx *Tx) put(post *q.Post) (err error) {
 }
 
 // Update updates the post
-func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
+func (tx *Tx) Update(qs ...q.Query) error {
 	metaBucket := tx.bucket(postmetaKey)
 	indexBucket := tx.bucket(postindexKey)
 	kvBucket := tx.bucket(postkvKey)
@@ -361,7 +361,7 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 
 	post, err := tx.Get(qs...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	copy := post.Clone()
@@ -374,18 +374,18 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 	// update alias index
 	if copy.Alias != post.Alias {
 		if idIndexBucket.Get([]byte(copy.Alias)) != nil {
-			return nil, ErrDuplicateAlias
+			return ErrDuplicateAlias
 		}
 		if len(post.Alias) > 0 {
 			err = idIndexBucket.Delete([]byte(post.Alias))
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
 		if len(copy.Alias) > 0 {
 			err = idIndexBucket.Put([]byte(copy.Alias), copy.PKey[:])
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
 		if !shouldUpdateMeta {
@@ -400,14 +400,14 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 			keypath := join([]byte(post.Owner), post.PKey[:], 0)
 			err = ownerIndexBucket.Delete(keypath)
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
 		if len(copy.Owner) > 0 {
 			keypath := join([]byte(copy.Owner), copy.PKey[:], 0)
 			err = ownerIndexBucket.Put(keypath, []byte{1})
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
 		if !shouldUpdateMeta {
@@ -423,7 +423,7 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 				keypath := join([]byte(tag), post.PKey[:], 0)
 				err = tagIndexBucket.Delete(keypath)
 				if err != nil {
-					return nil, err
+					return err
 				}
 			}
 		}
@@ -432,7 +432,7 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 				keypath := join([]byte(tag), copy.PKey[:], 0)
 				err = tagIndexBucket.Put(keypath, []byte{1})
 				if err != nil {
-					return nil, err
+					return err
 				}
 			}
 		}
@@ -446,7 +446,7 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 		for k, v := range copy.KV {
 			err = postkvBucket.Put([]byte(k), v)
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
 		if !shouldUpdateMeta {
@@ -458,11 +458,11 @@ func (tx *Tx) Update(qs ...q.Query) (*q.Post, error) {
 		copy.Modtime = uint32(time.Now().Unix())
 		err = metaBucket.Put(copy.PKey[:], copy.MetaBytes())
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return copy, nil
+	return nil
 }
 
 // MoveTo moves the post

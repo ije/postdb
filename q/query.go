@@ -30,7 +30,7 @@ type offsetQuery string
 type limitQuery uint32
 type orderQuery uint8
 type filterQuery struct {
-	C func(Post) bool
+	T func(Post) bool
 }
 
 // ID returns an id Query
@@ -201,5 +201,5 @@ func (f filterQuery) Apply(p *Post) {}
 
 // Resolve implements the Query interface
 func (f filterQuery) Resolve(r *Resolver) {
-	r.Filters = append(r.Filters, f.C)
+	r.Filters = append(r.Filters, f.T)
 }
