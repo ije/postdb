@@ -2,7 +2,6 @@ package postdb
 
 import (
 	"crypto/tls"
-	"fmt"
 	"strings"
 
 	"github.com/ije/puddle"
@@ -26,9 +25,8 @@ func Connect(config ConnConfig) (*Client, error) {
 
 // DB opens a client database
 func (c *Client) DB(name string) (*ClientDB, error) {
-	name = strings.TrimSpace(strings.ToLower(name))
-	if !nameReg.MatchString(name) {
-		return nil, fmt.Errorf("invalid name '%s'", name)
-	}
-	return &ClientDB{db: name, client: c}, nil
+	return &ClientDB{
+		db:     strings.TrimSpace(strings.ToLower(name)),
+		client: c,
+	}, nil
 }

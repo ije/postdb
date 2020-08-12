@@ -2,16 +2,13 @@ package postdb
 
 import (
 	"io"
-	"regexp"
 
 	"github.com/postui/postdb/q"
 )
 
-var nameReg = regexp.MustCompile(`^[a-z0-9\_\-\.]+$`)
-
 type ClientDB struct {
-	client *Client
 	db     string
+	client *Client
 }
 
 // Begin starts a new transaction.
