@@ -3,7 +3,9 @@ package postdb
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
+	"log"
 	"strings"
 	"time"
 
@@ -278,10 +280,11 @@ RE:
 	}
 	// ensure the post.ID is unique
 	if idIndexBucket.Get([]byte(post.ID)) != nil {
+		log.Printf("[warn] duplicate id %s", post.ID)
 		goto RE
 	}
 
-	err := tx.put(post)
+	err := tx.PutPost(post)
 	if err != nil {
 		return nil, err
 	}
@@ -289,11 +292,20 @@ RE:
 	return post, nil
 }
 
-func (tx *Tx) put(post *q.Post) (err error) {
+// PutPost puts a new post
+func (tx *Tx) PutPost(post *q.Post) (err error) {
 	metaBucket := tx.bucket(postmetaKey)
 	indexBucket := tx.bucket(postindexKey)
 	kvBucket := tx.bucket(postkvKey)
 	idIndexBucket := indexBucket.Bucket(postidKey)
+
+	if metaBucket.Get(post.PKey[:]) != nil {
+		return fmt.Errorf("duplicate pkey %v", post.PKey)
+	}
+
+	if idIndexBucket.Get([]byte(post.ID)) != nil {
+		return fmt.Errorf("duplicate id %s", post.ID)
+	}
 
 	err = metaBucket.Put(post.PKey[:], post.MetaBytes())
 	if err != nil {
