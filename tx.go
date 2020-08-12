@@ -225,7 +225,7 @@ func (tx *Tx) readKV(post *q.Post, keys []string) {
 				for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
 					post.KV[string(k)] = v
 				}
-			} else {
+			} else if _, ok := post.KV[key]; !ok {
 				v := postkvBucket.Get([]byte(key))
 				if v != nil {
 					post.KV[key] = v
@@ -508,9 +508,28 @@ func (tx *Tx) DeleteKV(qs ...q.Query) error {
 		postkvBucket := kvBucket.Bucket([]byte(post.ID))
 		if postkvBucket != nil {
 			for _, key := range res.Keys {
-				err := postkvBucket.Delete([]byte(key))
-				if err != nil {
-					return err
+				if key == "*" {
+					c := postkvBucket.Cursor()
+					for k, _ := c.First(); k != nil; k, _ = c.Next() {
+						err := postkvBucket.Delete(k)
+						if err != nil {
+							return err
+						}
+					}
+				} else if kl := len(key); kl > 1 && strings.HasSuffix(key, "*") {
+					c := postkvBucket.Cursor()
+					prefix := []byte(key[:kl-1])
+					for k, _ := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, _ = c.Next() {
+						err := postkvBucket.Delete(k)
+						if err != nil {
+							return err
+						}
+					}
+				} else {
+					err := postkvBucket.Delete([]byte(key))
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}

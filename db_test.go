@@ -59,7 +59,7 @@ func TestDB(t *testing.T) {
 	}
 	toBe(t, "posts length", len(posts), 11)
 
-	_, err = db.Update(
+	err = db.Update(
 		q.ID(postZh.ID),
 		q.Alias("hello-world-zh"),
 		q.Status(2),
