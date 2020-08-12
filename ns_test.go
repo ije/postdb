@@ -16,25 +16,16 @@ func TestNS(t *testing.T) {
 	}
 	defer db.Close()
 
-	nsa, err := db.Namespace("a")
-	if err != nil {
-		t.Fatal(err)
-	}
-	nsb, err := db.Namespace("b")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// flush
 	_, err = db.Delete(q.Owner("admin"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = nsa.Delete(q.Owner("admin"))
+	_, err = db.NS("a").Delete(q.Owner("admin"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = nsb.Delete(q.Owner("admin"))
+	_, err = db.NS("b").Delete(q.Owner("admin"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +47,7 @@ func TestNS(t *testing.T) {
 	}
 
 	for i := 0; i < 10; i++ {
-		_, err := nsa.Put(
+		_, err := db.NS("a").Put(
 			q.Alias(fmt.Sprintf("hello-world-%d", i+1)),
 			q.Status(1),
 			q.Owner("admin"),
@@ -71,7 +62,7 @@ func TestNS(t *testing.T) {
 		}
 	}
 
-	_, err = nsb.Put(
+	_, err = db.NS("b").Put(
 		q.Alias("hello-world-zh"),
 		q.Status(1),
 		q.Owner("admin"),
@@ -91,13 +82,13 @@ func TestNS(t *testing.T) {
 	}
 	toBe(t, "db posts length", len(posts), 5)
 
-	posts, err = nsa.List()
+	posts, err = db.NS("a").List()
 	if err != nil {
 		t.Fatal(err)
 	}
 	toBe(t, "nsa's posts length", len(posts), 10)
 
-	posts, err = nsb.List()
+	posts, err = db.NS("b").List()
 	if err != nil {
 		t.Fatal(err)
 	}

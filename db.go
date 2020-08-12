@@ -1,7 +1,6 @@
 package postdb
 
 import (
-	"errors"
 	"io"
 	"os"
 	"sync"
@@ -63,51 +62,54 @@ func Open(path string, mode os.FileMode) (db *DB, err error) {
 }
 
 // Namespace returns the namepace.
-func (db *DB) Namespace(name string) (*NS, error) {
-	if name == "" {
-		return nil, errors.New("empty name")
-	}
-
+func (db *DB) Namespace(name string) *NS {
 	db.lock.RLock()
 	ns, ok := db.nsPool[name]
 	db.lock.RUnlock()
 	if ok {
-		return ns, nil
+		return ns
 	}
 
-	err := db.bolt.Update(func(tx *bolt.Tx) error {
-		for _, key := range [][]byte{
-			postmetaKey,
-			postindexKey,
-			postkvKey,
-		} {
-			_, err := tx.CreateBucketIfNotExists(join([]byte(name), key, 0))
-			if err != nil {
-				return err
+	if name != "" {
+		err := db.bolt.Update(func(tx *bolt.Tx) error {
+			for _, key := range [][]byte{
+				postmetaKey,
+				postindexKey,
+				postkvKey,
+			} {
+				_, err := tx.CreateBucketIfNotExists(join([]byte(name), key, 0))
+				if err != nil {
+					return err
+				}
 			}
-		}
-		indexBucket := tx.Bucket(join([]byte(name), postindexKey, 0))
-		for _, key := range [][]byte{
-			postidKey,
-			postownerKey,
-			posttagKey,
-		} {
-			_, err := indexBucket.CreateBucketIfNotExists(key)
-			if err != nil {
-				return err
+			indexBucket := tx.Bucket(join([]byte(name), postindexKey, 0))
+			for _, key := range [][]byte{
+				postidKey,
+				postownerKey,
+				posttagKey,
+			} {
+				_, err := indexBucket.CreateBucketIfNotExists(key)
+				if err != nil {
+					return err
+				}
 			}
+			return nil
+		})
+		if err != nil {
+			return &NS{err, name, db}
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
 
-	ns = &NS{name, db}
+	ns = &NS{nil, name, db}
 	db.lock.Lock()
 	db.nsPool[name] = ns
 	db.lock.Unlock()
-	return ns, nil
+	return ns
+}
+
+// NS is a shortcut for Namespace
+func (db *DB) NS(name string) *NS {
+	return db.Namespace(name)
 }
 
 // Begin starts a new transaction.

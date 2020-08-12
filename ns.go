@@ -6,12 +6,17 @@ import (
 
 // A NS for the DB
 type NS struct {
+	err  error
 	name string
 	db   *DB
 }
 
 // Begin starts a new transaction.
 func (ns *NS) Begin(writable bool) (*Tx, error) {
+	if ns.err != nil {
+		return nil, ns.err
+	}
+
 	tx, err := ns.db.bolt.Begin(writable)
 	if err != nil {
 		return nil, err
