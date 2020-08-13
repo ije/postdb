@@ -214,25 +214,37 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 
 func (tx *Tx) readKV(post *q.Post, keys []string) {
 	postkvBucket := tx.bucket(postkvKey).Bucket([]byte(post.ID))
-	if postkvBucket != nil {
-		for _, key := range keys {
-			if key == "*" {
-				c := postkvBucket.Cursor()
-				for k, v := c.First(); k != nil; k, v = c.Next() {
-					post.KV[string(k)] = v
+	if postkvBucket == nil {
+		return
+	}
+
+	var rest []string
+	for _, key := range keys {
+		kl := len(key)
+		if kl > 0 {
+			if strings.HasSuffix(key, "*") {
+				// key equals "*"
+				if kl == 1 {
+					c := postkvBucket.Cursor()
+					for k, v := c.First(); k != nil; k, v = c.Next() {
+						post.KV[string(k)] = v
+					}
+					return
 				}
-			} else if kl := len(key); kl > 1 && strings.HasSuffix(key, "*") {
-				c := postkvBucket.Cursor()
 				prefix := []byte(key[:kl-1])
+				c := postkvBucket.Cursor()
 				for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
 					post.KV[string(k)] = v
 				}
 			} else if _, ok := post.KV[key]; !ok {
-				v := postkvBucket.Get([]byte(key))
-				if v != nil {
-					post.KV[key] = v
-				}
+				rest = append(rest, key)
 			}
+		}
+	}
+	for _, key := range rest {
+		v := postkvBucket.Get([]byte(key))
+		if v != nil {
+			post.KV[key] = v
 		}
 	}
 }
@@ -302,16 +314,14 @@ func (tx *Tx) PutPost(post *q.Post) (err error) {
 	if metaBucket.Get(post.PKey[:]) != nil {
 		return fmt.Errorf("duplicate pkey %v", post.PKey)
 	}
-
-	if idIndexBucket.Get([]byte(post.ID)) != nil {
-		return fmt.Errorf("duplicate id %s", post.ID)
-	}
-
 	err = metaBucket.Put(post.PKey[:], post.MetaBytes())
 	if err != nil {
 		return
 	}
 
+	if idIndexBucket.Get([]byte(post.ID)) != nil {
+		return fmt.Errorf("duplicate id %s", post.ID)
+	}
 	err = idIndexBucket.Put([]byte(post.ID), post.PKey[:])
 	if err != nil {
 		return
@@ -490,7 +500,7 @@ func (tx *Tx) MoveTo(qs ...q.Query) error {
 	}
 
 	if res.Anchor == "" {
-		return errors.New("missing anchor")
+		return errors.New("missing anchor id")
 	}
 
 	anchorPost, err := tx.Get(q.ID(res.Anchor))
@@ -499,6 +509,7 @@ func (tx *Tx) MoveTo(qs ...q.Query) error {
 	}
 
 	post.PKey = anchorPost.PKey
+	// todo: implement moveTo function
 
 	return nil
 }
