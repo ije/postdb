@@ -38,13 +38,13 @@ db.Get(q.ID("id"))
 db.Get(q.ID("id"), q.K("title", "content"))
 
 // get post with prefixed kv
-db.Get(q.ID("id"), q.K("title_*")) // match key in title_en,title_zh,title_de...
+db.Get(q.ID("id"), q.K("title_*")) // match key in title_en,title_zh...
 
 // get post with full kv
 db.Get(q.ID("id"), q.K("*")))
 
 // add a new post
-db.Put(q.Alias("alias"), q.Tags("tag1", "tag2"), q.KV{"k": []byte("v")})
+db.Put(q.Alias("alias"), q.Status(1), q.Tags("tag1", "tag2"), q.KV{"k": []byte("v")})
 
 // update the existing post
 db.Update(q.ID("id"), q.KV{"k2": []byte("v2")})
@@ -55,32 +55,17 @@ db.MoveTo(q.ID("id"), q.Anchor("id"))
 // delete the existing post kv
 db.DeleteKV(q.ID("id"), q.K("k2"))
 
-// delete the existing posts permanently
+// delete the existing posts
 db.Delete(q.ID("id"))
+
+// with namespace
+ns := db.Namespace("name")
+ns.List()
+ns.Get(q.ID("id"))
+...
 
 // backup the entire database
 db.WriteTo(w)
-```
-
-using namespace:
-
-```go
-// opening a database
-db, err := postdb.Open("post.db", 0666)
-if err != nil {
-    return err
-}
-defer db.Close()
-
-// creating a namespace
-ns, err := db.Namespace("name")
-if err != nil {
-    return err
-}
-
-// use the db with namespace
-ns.List()
-...
 ```
 
 as server of C/S:
