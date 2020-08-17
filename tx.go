@@ -223,16 +223,15 @@ func (tx *Tx) readKV(post *q.Post, keys []string) {
 		kl := len(key)
 		if kl > 0 {
 			if strings.HasSuffix(key, "*") {
+				c := postkvBucket.Cursor()
 				// key equals "*"
 				if kl == 1 {
-					c := postkvBucket.Cursor()
 					for k, v := c.First(); k != nil; k, v = c.Next() {
 						post.KV[string(k)] = v
 					}
 					return
 				}
 				prefix := []byte(key[:kl-1])
-				c := postkvBucket.Cursor()
 				for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
 					post.KV[string(k)] = v
 				}
@@ -530,29 +529,38 @@ func (tx *Tx) DeleteKV(qs ...q.Query) error {
 		kvBucket := tx.bucket(postkvKey)
 		postkvBucket := kvBucket.Bucket([]byte(post.ID))
 		if postkvBucket != nil {
+			var rest []string
 			for _, key := range res.Keys {
-				if key == "*" {
-					c := postkvBucket.Cursor()
-					for k, _ := c.First(); k != nil; k, _ = c.Next() {
-						err := postkvBucket.Delete(k)
-						if err != nil {
-							return err
+				kl := len(key)
+				if kl > 0 {
+					if strings.HasSuffix(key, "*") {
+						c := postkvBucket.Cursor()
+						// key equals "*"
+						if kl == 1 {
+							for k, _ := c.First(); k != nil; k, _ = c.Next() {
+								err := postkvBucket.Delete(k)
+								if err != nil {
+									return err
+								}
+							}
+							return nil
 						}
-					}
-				} else if kl := len(key); kl > 1 && strings.HasSuffix(key, "*") {
-					c := postkvBucket.Cursor()
-					prefix := []byte(key[:kl-1])
-					for k, _ := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, _ = c.Next() {
-						err := postkvBucket.Delete(k)
-						if err != nil {
-							return err
+						prefix := []byte(key[:kl-1])
+						for k, _ := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, _ = c.Next() {
+							err := postkvBucket.Delete(k)
+							if err != nil {
+								return err
+							}
 						}
+					} else if _, ok := post.KV[key]; !ok {
+						rest = append(rest, key)
 					}
-				} else {
-					err := postkvBucket.Delete([]byte(key))
-					if err != nil {
-						return err
-					}
+				}
+			}
+			for _, key := range rest {
+				err := postkvBucket.Delete([]byte(key))
+				if err != nil {
+					return err
 				}
 			}
 		}
