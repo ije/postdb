@@ -10,7 +10,7 @@ A database to store your posts in [Golang](https://golang.org) with [BoltDB](htt
 ## Installing
 ```bash
 go get github.com/postui/postdb
-``` 
+```
 
 
 ## Usage
