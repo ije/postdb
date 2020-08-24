@@ -20,7 +20,7 @@ func TestPostMeta(t *testing.T) {
 		q.Apply(post)
 	}
 
-	metadata := post.MetaBytes()
+	metadata := post.MetaData()
 	_post, err := PostFromBytes(metadata)
 	if err != nil {
 		t.Fatal(err)

@@ -20,7 +20,7 @@ var (
 
 // A Post specifies a post of postdb.
 type Post struct {
-	PKey    [12]byte // Created by xid
+	PKey    [12]byte
 	ID      string
 	Alias   string
 	Status  uint8
@@ -30,6 +30,7 @@ type Post struct {
 	Tags    []string
 	KV      KV
 	// todo: Rank uint32
+	// todo: Revision uint32
 }
 
 // NewPost returns a new post.
@@ -159,10 +160,10 @@ func (p *Post) Clone(qs ...Query) *Post {
 	return clone
 }
 
-// MetaBytes returns the meta bytes of post.
+// MetaData returns the meta data of post.
 // data structure:
 // "POST"(4) | version(1) | pkey(12) | id(20) | crtime(4) | modtime(4)| status(1) | aliasLen(1) | ownerLen(1) | tagsN(1) | alias(aliasLen) | owner(ownerLen) | tags([1+tagLen]*tagN) | checksum(1)
-func (p *Post) MetaBytes() []byte {
+func (p *Post) MetaData() []byte {
 	aliasLen := len(p.Alias)
 	ownerLen := len(p.Owner)
 	metaLen := 50 + aliasLen + ownerLen

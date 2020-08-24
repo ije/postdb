@@ -255,19 +255,19 @@ func (tx *Tx) Get(qs ...q.Query) (*q.Post, error) {
 		q.Resolve(&res)
 	}
 
-	var metaBytes []byte
+	var metadata []byte
 	if len(res.IDs) > 0 {
 		idIndexBucket := tx.bucket(postindexKey).Bucket(postidKey)
 		pkey := idIndexBucket.Get([]byte(res.IDs[0]))
 		if pkey != nil {
-			metaBytes = tx.bucket(postmetaKey).Get(pkey)
+			metadata = tx.bucket(postmetaKey).Get(pkey)
 		}
 	}
-	if metaBytes == nil {
+	if metadata == nil {
 		return nil, ErrNotFound
 	}
 
-	post, err := q.PostFromBytes(metaBytes)
+	post, err := q.PostFromBytes(metadata)
 	if err != nil {
 		return nil, err
 	}
@@ -313,7 +313,7 @@ func (tx *Tx) PutPost(post *q.Post) (err error) {
 	if metaBucket.Get(post.PKey[:]) != nil {
 		return fmt.Errorf("duplicate pkey %v", post.PKey)
 	}
-	err = metaBucket.Put(post.PKey[:], post.MetaBytes())
+	err = metaBucket.Put(post.PKey[:], post.MetaData())
 	if err != nil {
 		return
 	}
@@ -477,7 +477,7 @@ func (tx *Tx) Update(qs ...q.Query) error {
 
 	if shouldUpdateMeta {
 		copy.Modtime = uint32(time.Now().Unix())
-		err = metaBucket.Put(copy.PKey[:], copy.MetaBytes())
+		err = metaBucket.Put(copy.PKey[:], copy.MetaData())
 		if err != nil {
 			return err
 		}
