@@ -6,9 +6,9 @@ const (
 	// ASC specifies the order of ASC
 	ASC
 	// todo:
-	// RANK_DESC specifies the order of Rank
+	// RANK_DESC specifies the order of DESC by Rank
 	// RANK_DESC
-	// RANK_ASC specifies the order of Rank
+	// RANK_ASC specifies the order of ASC by Rank
 	// RANK_ASC
 )
 
