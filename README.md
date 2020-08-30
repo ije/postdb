@@ -4,7 +4,7 @@
 [![GoReport](https://goreportcard.com/badge/github.com/postui/postdb)](https://goreportcard.com/report/github.com/postui/postdb)
 [![MIT](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
-A database to store your posts in [Golang](https://golang.org) with [BoltDB](https://github.com/etcd-io/bbolt), noSQL.
+A database to store your posts in [Go](https://golang.org) with [BoltDB](https://github.com/etcd-io/bbolt), noSQL.
 
 
 ## Installing
