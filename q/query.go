@@ -120,7 +120,9 @@ func (q aliasQuery) Apply(p *Post) {
 }
 
 // Resolve implements the Query interface
-func (q aliasQuery) Resolve(r *Resolver) {}
+func (q aliasQuery) Resolve(r *Resolver) {
+	r.IDs = append(r.IDs, string(q))
+}
 
 // Apply implements the Query interface
 func (q ownerQuery) Apply(p *Post) {

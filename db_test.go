@@ -75,6 +75,11 @@ func TestDB(t *testing.T) {
 		t.Fatal(postZh.ID, err)
 	}
 
+	_, err = db.Get(q.Alias("hello-world-zh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	postZh, err = db.Get(q.ID(postZh.ID), q.K("*"))
 	if err != nil {
 		t.Fatal(err)
