@@ -3,7 +3,6 @@ package postdb
 import (
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net"
 	"sync"
 	"time"
@@ -21,7 +20,11 @@ type Server struct {
 	ServerConfig
 }
 
-func (s *Server) CreateUser(name string, password string, acl string) error {
+func (s *Server) CreateUser(username string, password string) error {
+	return nil
+}
+
+func (s *Server) CreateDB(name string, owner string) error {
 	return nil
 }
 
@@ -66,10 +69,9 @@ func (s *Server) serve(l net.Listener) error {
 				} else {
 					tempDelay *= 2
 				}
-				if max := 1 * time.Second; tempDelay > max {
-					tempDelay = max
+				if tempDelay > time.Second {
+					tempDelay = time.Second
 				}
-				log.Printf("http: Accept error: %v; retrying in %v", err, tempDelay)
 				time.Sleep(tempDelay)
 				continue
 			}

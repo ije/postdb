@@ -1,26 +1,38 @@
 package postdb
 
 import (
+	"context"
 	"crypto/tls"
+	"fmt"
+	"net"
 	"strings"
 
 	"github.com/ije/puddle"
 )
 
 type ConnConfig struct {
-	Host      string
-	Port      uint16
-	User      string
-	Password  string
-	TLSConfig *tls.Config
+	Host        string
+	Port        uint16
+	User        string
+	Password    string
+	MaxPoolSize int32
+	TLSConfig   *tls.Config
 }
 
 type Client struct {
-	pool *puddle.Pool
+	config ConnConfig
+	pool   *puddle.Pool
 }
 
 func Connect(config ConnConfig) (*Client, error) {
-	return nil, nil
+	constructor := func(context.Context) (interface{}, error) {
+		return net.Dial("tcp", fmt.Sprintf("%s:%d", config.Host, config.Port))
+	}
+	destructor := func(value interface{}) {
+		value.(net.Conn).Close()
+	}
+	pool := puddle.NewPool(constructor, destructor, config.MaxPoolSize)
+	return &Client{config, pool}, nil
 }
 
 // DB opens a client database
