@@ -63,14 +63,14 @@ func Tags(tags ...string) Query {
 	return tagsQuery(StringSet(tags))
 }
 
-// Keys returns a keys Query
-func Keys(keys ...string) Query {
+// Select returns a keys Query
+func Select(keys ...string) Query {
 	return keysQuery(StringSet(keys))
 }
 
-// K is a shortcut for Key
+// K is a shortcut for Select
 func K(keys ...string) Query {
-	return Keys(keys...)
+	return Select(keys...)
 }
 
 // Anchor returns a anchor Query
