@@ -6,12 +6,10 @@
 
 A database to store your posts in [Go](https://golang.org) with [BoltDB](https://github.com/etcd-io/bbolt), noSQL.
 
-
 ## Installing
 ```bash
 go get github.com/postui/postdb
 ```
-
 
 ## Usage
 
@@ -109,7 +107,6 @@ db.List()
 ...
 ```
 
-
 #   
 
-Copyright (c) 2020-present, [postUI Inc.](https://postui.com)
+Copyright (c) 2020-present, [postUI lab.](https://postui.com)
