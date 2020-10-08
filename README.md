@@ -1,4 +1,4 @@
-# POSTDB
+# PostDB
 
 [![GoDoc](https://godoc.org/github.com/postui/postdb?status.svg)](https://godoc.org/github.com/postui/postdb)
 [![GoReport](https://goreportcard.com/badge/github.com/postui/postdb)](https://goreportcard.com/report/github.com/postui/postdb)
@@ -42,16 +42,16 @@ db.Get(q.ID(id), q.Select("title_*")) // match key in title_en,title_zh...
 db.Get(q.ID(id), q.Select("*"))
 
 // add a new post
-db.Put(q.Alias("alias"), q.Status(1), q.Tags("tag1", "tag2"), q.KV{"k": []byte("v")})
+db.Put(q.Alias(alias), q.Status(1), q.Tags("tag1", "tag2"), q.KV{"k": []byte("v")})
 
 // update the existing post
-db.Update(q.ID(id), q.KV{"k2": []byte("v2")})
+db.Update(q.ID(id), q.KV{"k": []byte("v2")})
 
 // move the existing post
 db.MoveTo(q.ID(id), q.Anchor(id))
 
 // delete the existing post kv
-db.DeleteKV(q.ID(id), q.Select("k2"))
+db.DeleteKV(q.ID(id), q.Select("k"))
 
 // delete the existing posts
 db.Delete(q.ID(id))
@@ -71,12 +71,13 @@ as server of C/S:
 ```go
 // create a server
 s := &postdb.Server{
-    DBPath: "path",
+    DBPath: "/path",
     Port:   9000,
 }
 
 // create a new database user
-s.CreateUser("USERNAME", "PASS", acl)
+s.CreateUser("USERNAME", "PASS")
+s.CreateDB("DBNAME", "OWNER")
 
 // start the server
 s.Serve()
@@ -104,9 +105,10 @@ if err != nil {
 
 // use the client database
 db.List()
+db.Get(q.ID(id))
 ...
 ```
 
-#   
+#  
 
 Copyright (c) 2020-present, [postUI lab.](https://postui.com)
