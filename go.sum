@@ -1,5 +1,5 @@
-github.com/ije/puddle v1.1.2 h1:gtmEZa5lwFMbTdo6/+wgf8Zr26h3bI4LDvG4exbdzfU=
-github.com/ije/puddle v1.1.2/go.mod h1:cPPDHY2YlIceNRIT/xlY5+Bwccf13C3OSwfq7rYCuVM=
+github.com/ije/puddle v1.1.4 h1:+ztX8oRfEPQnJq+tjbfbnNbiQTCn0vwmSHFXp8mlHIY=
+github.com/ije/puddle v1.1.4/go.mod h1:2fLx28zg3QAc3XaHEqumVt+ocV4Wy31FB66b0h7lafc=
 github.com/rs/xid v1.2.1 h1:mhH9Nq+C1fY2l1XIpgxIiUOfNpRBYH1kKcr+qfKgjRc=
 github.com/rs/xid v1.2.1/go.mod h1:+uKXf+4Djp6Md1KODXJxgGQPKngRmWyn10oCKFzNHOQ=
 go.etcd.io/bbolt v1.3.5 h1:XAzx9gjCb0Rxj7EoqcClPD1d5ZBxZJk0jbuoPHenBt0=
