@@ -22,9 +22,9 @@ type Tx struct {
 
 // List returns some posts
 func (tx *Tx) List(qs ...q.Query) (posts []post.Post) {
-	metaBucket := tx.bucket(postmetaKey)
-	indexBucket := tx.bucket(postindexKey)
-	idIndexBucket := indexBucket.Bucket(postidKey)
+	metaBucket := tx.bucket(keyPostMeta)
+	indexBucket := tx.bucket(keyPostIndex)
+	idIndexBucket := indexBucket.Bucket(keyPostID)
 
 	var indexCur *bolt.Cursor
 	var prefixs [][]byte
@@ -69,7 +69,7 @@ func (tx *Tx) List(qs ...q.Query) (posts []post.Post) {
 		}
 		posts = posts[:n]
 	} else if len(res.Tags) > 0 {
-		indexCur = indexBucket.Bucket(posttagKey).Cursor()
+		indexCur = indexBucket.Bucket(keyPostTag).Cursor()
 		prefixs = make([][]byte, len(res.Tags))
 		for i, tag := range res.Tags {
 			prefixs[i] = toPrefix(tag)
@@ -80,7 +80,7 @@ func (tx *Tx) List(qs ...q.Query) (posts []post.Post) {
 			}
 		}
 	} else if queryOwner {
-		indexCur = indexBucket.Bucket(postownerKey).Cursor()
+		indexCur = indexBucket.Bucket(keyPostOwner).Cursor()
 		prefixs = [][]byte{toPrefix(res.Owner)}
 	}
 
@@ -216,7 +216,7 @@ func (tx *Tx) List(qs ...q.Query) (posts []post.Post) {
 }
 
 func (tx *Tx) readKV(post *post.Post, keys []string) {
-	postkvBucket := tx.bucket(postkvKey).Bucket([]byte(post.ID))
+	postkvBucket := tx.bucket(keyPostKV).Bucket([]byte(post.ID))
 	if postkvBucket == nil {
 		return
 	}
@@ -260,10 +260,10 @@ func (tx *Tx) Get(qs ...q.Query) (*post.Post, error) {
 
 	var metadata []byte
 	if len(res.IDs) > 0 {
-		idIndexBucket := tx.bucket(postindexKey).Bucket(postidKey)
+		idIndexBucket := tx.bucket(keyPostIndex).Bucket(keyPostID)
 		pkey := idIndexBucket.Get([]byte(res.IDs[0]))
 		if pkey != nil {
-			metadata = tx.bucket(postmetaKey).Get(pkey)
+			metadata = tx.bucket(keyPostMeta).Get(pkey)
 		}
 	}
 	if metadata == nil {
@@ -284,8 +284,8 @@ func (tx *Tx) Get(qs ...q.Query) (*post.Post, error) {
 
 // Put puts a new post
 func (tx *Tx) Put(qs ...q.Query) (*post.Post, error) {
-	indexBucket := tx.bucket(postindexKey)
-	idIndexBucket := indexBucket.Bucket(postidKey)
+	indexBucket := tx.bucket(keyPostIndex)
+	idIndexBucket := indexBucket.Bucket(keyPostID)
 
 RE:
 	post := post.New()
@@ -308,10 +308,10 @@ RE:
 
 // PutPost puts a new post
 func (tx *Tx) PutPost(post *post.Post) (err error) {
-	metaBucket := tx.bucket(postmetaKey)
-	indexBucket := tx.bucket(postindexKey)
-	kvBucket := tx.bucket(postkvKey)
-	idIndexBucket := indexBucket.Bucket(postidKey)
+	metaBucket := tx.bucket(keyPostMeta)
+	indexBucket := tx.bucket(keyPostIndex)
+	kvBucket := tx.bucket(keyPostKV)
+	idIndexBucket := indexBucket.Bucket(keyPostID)
 
 	if metaBucket.Get(post.PKey[:]) != nil {
 		return fmt.Errorf("duplicate pkey %v", post.PKey)
@@ -340,7 +340,7 @@ func (tx *Tx) PutPost(post *post.Post) (err error) {
 	}
 
 	if len(post.Owner) > 0 {
-		ownerIndexBucket := indexBucket.Bucket(postownerKey)
+		ownerIndexBucket := indexBucket.Bucket(keyPostOwner)
 		keypath := join([]byte(post.Owner), post.PKey[:], 0)
 		err = ownerIndexBucket.Put(keypath, []byte{1})
 		if err != nil {
@@ -349,7 +349,7 @@ func (tx *Tx) PutPost(post *post.Post) (err error) {
 	}
 
 	if len(post.Tags) > 0 {
-		tagIndexBucket := indexBucket.Bucket(posttagKey)
+		tagIndexBucket := indexBucket.Bucket(keyPostTag)
 		for _, tag := range post.Tags {
 			keypath := join([]byte(tag), post.PKey[:], 0)
 			err = tagIndexBucket.Put(keypath, []byte{1})
@@ -378,10 +378,10 @@ func (tx *Tx) PutPost(post *post.Post) (err error) {
 
 // Update updates the post
 func (tx *Tx) Update(qs ...q.Query) error {
-	metaBucket := tx.bucket(postmetaKey)
-	indexBucket := tx.bucket(postindexKey)
-	kvBucket := tx.bucket(postkvKey)
-	idIndexBucket := indexBucket.Bucket(postidKey)
+	metaBucket := tx.bucket(keyPostMeta)
+	indexBucket := tx.bucket(keyPostIndex)
+	kvBucket := tx.bucket(keyPostKV)
+	idIndexBucket := indexBucket.Bucket(keyPostID)
 
 	post, err := tx.Get(qs...)
 	if err != nil {
@@ -419,7 +419,7 @@ func (tx *Tx) Update(qs ...q.Query) error {
 
 	// update owner index
 	if copy.Owner != post.Owner {
-		ownerIndexBucket := indexBucket.Bucket(postownerKey)
+		ownerIndexBucket := indexBucket.Bucket(keyPostOwner)
 		if len(post.Owner) > 0 {
 			keypath := join([]byte(post.Owner), post.PKey[:], 0)
 			err = ownerIndexBucket.Delete(keypath)
@@ -441,7 +441,7 @@ func (tx *Tx) Update(qs ...q.Query) error {
 
 	// update tags index
 	if strings.Join(copy.Tags, "") != strings.Join(post.Tags, "") {
-		tagIndexBucket := indexBucket.Bucket(posttagKey)
+		tagIndexBucket := indexBucket.Bucket(keyPostTag)
 		if len(post.Tags) > 0 {
 			for _, tag := range post.Tags {
 				keypath := join([]byte(tag), post.PKey[:], 0)
@@ -529,7 +529,7 @@ func (tx *Tx) DeleteKV(qs ...q.Query) error {
 	}
 
 	if len(res.Keys) > 0 {
-		kvBucket := tx.bucket(postkvKey)
+		kvBucket := tx.bucket(keyPostKV)
 		postkvBucket := kvBucket.Bucket([]byte(post.ID))
 		if postkvBucket != nil {
 			var rest []string
@@ -578,10 +578,10 @@ func (tx *Tx) Delete(qs ...q.Query) (n int, err error) {
 		return 0, nil
 	}
 
-	metaBucket := tx.bucket(postmetaKey)
-	indexBucket := tx.bucket(postindexKey)
-	kvBucket := tx.bucket(postkvKey)
-	idIndexBucket := indexBucket.Bucket(postidKey)
+	metaBucket := tx.bucket(keyPostMeta)
+	indexBucket := tx.bucket(keyPostIndex)
+	kvBucket := tx.bucket(keyPostKV)
+	idIndexBucket := indexBucket.Bucket(keyPostID)
 	posts := tx.List(qs...)
 
 	for _, post := range posts {
@@ -603,7 +603,7 @@ func (tx *Tx) Delete(qs ...q.Query) (n int, err error) {
 		}
 
 		if len(post.Owner) > 0 {
-			ownerIndexBucket := indexBucket.Bucket(postownerKey)
+			ownerIndexBucket := indexBucket.Bucket(keyPostOwner)
 			keypath := join([]byte(post.Owner), []byte(post.ID), 0)
 			err = ownerIndexBucket.Delete(keypath)
 			if err != nil {
@@ -612,7 +612,7 @@ func (tx *Tx) Delete(qs ...q.Query) (n int, err error) {
 		}
 
 		if len(post.Tags) > 0 {
-			tagIndexBucket := indexBucket.Bucket(posttagKey)
+			tagIndexBucket := indexBucket.Bucket(keyPostTag)
 			for _, tag := range post.Tags {
 				keypath := join([]byte(tag), []byte(post.ID), 0)
 				err = tagIndexBucket.Delete(keypath)

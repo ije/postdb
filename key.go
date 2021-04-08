@@ -1,10 +1,10 @@
 package postdb
 
 var (
-	postmetaKey  = []byte("postmeta")
-	postindexKey = []byte("postindex")
-	postkvKey    = []byte("postkv")
-	postidKey    = []byte("postid")
-	postownerKey = []byte("postowner")
-	posttagKey   = []byte("posttag")
+	keyPostMeta  = []byte("post-meta")
+	keyPostIndex = []byte("post-index")
+	keyPostKV    = []byte("post-kv")
+	keyPostID    = []byte("post-id")
+	keyPostOwner = []byte("post-owner")
+	keyPostTag   = []byte("post-tag")
 )

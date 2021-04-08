@@ -29,20 +29,20 @@ func Open(path string, mode os.FileMode) (db *DB, err error) {
 
 	err = b.Update(func(tx *bolt.Tx) error {
 		for _, key := range [][]byte{
-			postmetaKey,
-			postindexKey,
-			postkvKey,
+			keyPostMeta,
+			keyPostIndex,
+			keyPostKV,
 		} {
 			_, err := tx.CreateBucketIfNotExists(key)
 			if err != nil {
 				return err
 			}
 		}
-		indexBucket := tx.Bucket(postindexKey)
+		indexBucket := tx.Bucket(keyPostIndex)
 		for _, key := range [][]byte{
-			postidKey,
-			postownerKey,
-			posttagKey,
+			keyPostID,
+			keyPostOwner,
+			keyPostTag,
 		} {
 			_, err := indexBucket.CreateBucketIfNotExists(key)
 			if err != nil {
@@ -74,20 +74,20 @@ func (db *DB) Namespace(name string) *NS {
 	if name != "" {
 		err := db.bolt.Update(func(tx *bolt.Tx) error {
 			for _, key := range [][]byte{
-				postmetaKey,
-				postindexKey,
-				postkvKey,
+				keyPostMeta,
+				keyPostIndex,
+				keyPostKV,
 			} {
 				_, err := tx.CreateBucketIfNotExists(join([]byte(name), key, 0))
 				if err != nil {
 					return err
 				}
 			}
-			indexBucket := tx.Bucket(join([]byte(name), postindexKey, 0))
+			indexBucket := tx.Bucket(join([]byte(name), keyPostIndex, 0))
 			for _, key := range [][]byte{
-				postidKey,
-				postownerKey,
-				posttagKey,
+				keyPostID,
+				keyPostOwner,
+				keyPostTag,
 			} {
 				_, err := indexBucket.CreateBucketIfNotExists(key)
 				if err != nil {
