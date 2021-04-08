@@ -1,6 +1,6 @@
 module github.com/postui/postdb
 
-go 1.14
+go 1.16
 
 require (
 	github.com/ije/puddle v1.1.4
