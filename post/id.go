@@ -1,4 +1,4 @@
-package q
+package post
 
 import (
 	"crypto/rand"
@@ -9,7 +9,7 @@ const (
 	idChars = "abcdefghijklmnopqrstuv0123456789"
 )
 
-// NewID returns a new ID string
+// NewID returns a new ID string in base32
 func NewID() string {
 	r := make([]byte, idLen)
 	buf := make([]byte, idLen)

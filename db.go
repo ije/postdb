@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/postui/postdb/post"
 	"github.com/postui/postdb/q"
 	bolt "go.etcd.io/bbolt"
 )
@@ -123,7 +124,7 @@ func (db *DB) Begin(writable bool) (*Tx, error) {
 }
 
 // List returns some posts
-func (db *DB) List(qs ...q.Query) ([]q.Post, error) {
+func (db *DB) List(qs ...q.Query) ([]post.Post, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
@@ -134,7 +135,7 @@ func (db *DB) List(qs ...q.Query) ([]q.Post, error) {
 }
 
 // Get returns the post
-func (db *DB) Get(qs ...q.Query) (*q.Post, error) {
+func (db *DB) Get(qs ...q.Query) (*post.Post, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
@@ -145,7 +146,7 @@ func (db *DB) Get(qs ...q.Query) (*q.Post, error) {
 }
 
 // Put puts a new post
-func (db *DB) Put(qs ...q.Query) (*q.Post, error) {
+func (db *DB) Put(qs ...q.Query) (*post.Post, error) {
 	tx, err := db.Begin(true)
 	if err != nil {
 		return nil, err

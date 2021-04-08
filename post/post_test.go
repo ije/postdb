@@ -1,4 +1,4 @@
-package q
+package post
 
 import (
 	"strings"
@@ -6,19 +6,10 @@ import (
 )
 
 func TestPostMeta(t *testing.T) {
-	post := NewPost()
-	for _, q := range []Query{
-		Alias("Hello World"),
-		Status(1),
-		Owner("admin"),
-		Tags("hello", "world"),
-		KV{
-			"title": []byte("Hello World!"),
-			"date":  []byte("2020-01-01"),
-		},
-	} {
-		q.Apply(post)
-	}
+	post := New()
+	post.Alias = "hello-world"
+	post.Owner = "admin"
+	post.Tags = []string{"hello", "world"}
 
 	metadata := post.MetaData()
 	_post, err := PostFromBytes(metadata)
@@ -26,8 +17,6 @@ func TestPostMeta(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	toBe(t, "post.KV.title", string(post.KV["title"]), "Hello World!")
-	toBe(t, "post.KV.date", string(post.KV["date"]), "2020-01-01")
 	toBe(t, "_post.PKey", _post.PKey, post.PKey)
 	toBe(t, "_post.ID", _post.ID, post.ID)
 	toBe(t, "_post.Alias", _post.Alias, post.Alias)
@@ -35,8 +24,6 @@ func TestPostMeta(t *testing.T) {
 	toBe(t, "_post.Owner", _post.Owner, post.Owner)
 	toBe(t, "_post.Crtime", _post.Crtime, post.Crtime)
 	toBe(t, "_post.Tags", strings.Join(_post.Tags, ","), strings.Join(post.Tags, ","))
-
-	t.Log(_post)
 }
 
 func toBe(t *testing.T, name string, a interface{}, b interface{}) {

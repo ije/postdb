@@ -1,6 +1,7 @@
 package postdb
 
 import (
+	"github.com/postui/postdb/post"
 	"github.com/postui/postdb/q"
 )
 
@@ -26,7 +27,7 @@ func (ns *NS) Begin(writable bool) (*Tx, error) {
 }
 
 // List returns some posts
-func (ns *NS) List(qs ...q.Query) ([]q.Post, error) {
+func (ns *NS) List(qs ...q.Query) ([]post.Post, error) {
 	tx, err := ns.Begin(false)
 	if err != nil {
 		return nil, err
@@ -37,7 +38,7 @@ func (ns *NS) List(qs ...q.Query) ([]q.Post, error) {
 }
 
 // Get returns the post
-func (ns *NS) Get(qs ...q.Query) (*q.Post, error) {
+func (ns *NS) Get(qs ...q.Query) (*post.Post, error) {
 	tx, err := ns.Begin(false)
 	if err != nil {
 		return nil, err
@@ -48,7 +49,7 @@ func (ns *NS) Get(qs ...q.Query) (*q.Post, error) {
 }
 
 // Put puts a new post
-func (ns *NS) Put(qs ...q.Query) (*q.Post, error) {
+func (ns *NS) Put(qs ...q.Query) (*post.Post, error) {
 	tx, err := ns.Begin(true)
 	if err != nil {
 		return nil, err

@@ -1,5 +1,12 @@
 package postdb
 
+// prefix creates a prefix
+func toPrefix(a string) []byte {
+	buf := make([]byte, 1+len(a))
+	copy(buf, a)
+	return buf
+}
+
 // join joins a and b by char c
 func join(a []byte, b []byte, c byte) []byte {
 	l := len(a)

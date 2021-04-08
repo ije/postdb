@@ -80,7 +80,7 @@ func TestDB(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	postZh, err = db.Get(q.ID(postZh.ID), q.K("*"))
+	postZh, err = db.Get(q.ID(postZh.ID), q.Select("*"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,22 +92,34 @@ func TestDB(t *testing.T) {
 	toBe(t, "postZh.KV.date", strings.HasSuffix(string(postZh.KV["date"]), ":)"), true)
 	toBe(t, "postZh.KV.newkey", string(postZh.KV["newkey"]), "v")
 
-	posts, err = db.List(q.Tags("world"), q.Offset("hello-world-3"), q.Limit(5), q.Order(q.ASC), q.K("*"))
+	posts, err = db.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	toBe(t, "posts length", len(posts), 11)
+
+	posts, err = db.List(q.Tags("world"), q.Limit(5), q.Order(q.ASC), q.Select("*"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	toBe(t, "posts length", len(posts), 5)
 	for _, post := range posts {
-		t.Logf(`%s/%s "%s" %s`, post.ID, post.Alias, string(post.KV.Get("title")), string(post.KV.Get("date")))
+		t.Logf(`%s/%s "%s" %s`, post.ID, post.Alias, string(post.KV["title"]), string(post.KV["date"]))
 	}
 
-	posts, err = db.List(q.Tags("世界"), q.K("*"))
+	posts, err = db.List(q.Offset(10), q.Limit(5))
+	if err != nil {
+		t.Fatal(err)
+	}
+	toBe(t, "posts length", len(posts), 1)
+
+	posts, err = db.List(q.Tags("世界"), q.Select("*"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	toBe(t, "posts length", len(posts), 1)
 	for _, post := range posts {
-		t.Logf(`%s/%s "%s" %s`, post.ID, post.Alias, string(post.KV.Get("title")), string(post.KV.Get("date")))
+		t.Logf(`%s/%s "%s" %s`, post.ID, post.Alias, string(post.KV["title"]), string(post.KV["date"]))
 	}
 }
 

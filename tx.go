@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/postui/postdb/post"
 	"github.com/postui/postdb/q"
 	bolt "go.etcd.io/bbolt"
 )
@@ -20,14 +21,14 @@ type Tx struct {
 }
 
 // List returns some posts
-func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
+func (tx *Tx) List(qs ...q.Query) (posts []post.Post) {
 	metaBucket := tx.bucket(postmetaKey)
 	indexBucket := tx.bucket(postindexKey)
 	idIndexBucket := indexBucket.Bucket(postidKey)
 
-	var cur *bolt.Cursor
+	var indexCur *bolt.Cursor
 	var prefixs [][]byte
-	var filter func(*q.Post) bool
+	var filter func(*post.Post) bool
 	var n uint32
 
 	var res q.Resolver
@@ -38,22 +39,22 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 	queryOwner := len(res.Owner) > 0
 	orderASC := res.Order >= q.ASC
 
-	var offsetPkey []byte
-	if len(res.Offset) > 0 {
-		offsetPkey = idIndexBucket.Get([]byte(res.Offset))
-		if offsetPkey == nil {
+	var anchorPkey []byte
+	if len(res.Anchor) > 0 {
+		anchorPkey = idIndexBucket.Get([]byte(res.Anchor))
+		if anchorPkey == nil {
 			return
 		}
 	}
 
 	if len(res.IDs) > 0 {
-		posts = make([]q.Post, len(res.IDs))
+		posts = make([]post.Post, len(res.IDs))
 		for i, id := range res.IDs {
 			pkey := idIndexBucket.Get([]byte(id))
 			if pkey != nil {
 				v := metaBucket.Get(pkey)
 				if v != nil {
-					post, err := q.PostFromBytes(v)
+					post, err := post.PostFromBytes(v)
 					if err == nil && bytes.Equal(post.PKey[:], pkey) && (len(res.Tags) == 0 || containsSlice(post.Tags, res.Tags)) && (!queryOwner || post.Owner == res.Owner) {
 						if len(res.Keys) > 0 {
 							tx.readKV(post, res.Keys)
@@ -61,9 +62,6 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 						if res.Filter(*post.Clone()) {
 							posts[i] = *post
 							n++
-							if res.Limit > 0 && n >= res.Limit {
-								break
-							}
 						}
 					}
 				}
@@ -71,74 +69,33 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 		}
 		posts = posts[:n]
 	} else if len(res.Tags) > 0 {
-		cur = indexBucket.Bucket(posttagKey).Cursor()
+		indexCur = indexBucket.Bucket(posttagKey).Cursor()
 		prefixs = make([][]byte, len(res.Tags))
-		var i int
-		for _, tag := range res.Tags {
-			p := make([]byte, len(tag)+1)
-			copy(p, []byte(tag))
-			prefixs[i] = p
-			i++
+		for i, tag := range res.Tags {
+			prefixs[i] = toPrefix(tag)
 		}
 		if queryOwner {
-			filter = func(post *q.Post) bool {
+			filter = func(post *post.Post) bool {
 				return post.Owner == res.Owner
 			}
 		}
 	} else if queryOwner {
-		prefix := make([]byte, len(res.Owner)+1)
-		copy(prefix, []byte(res.Owner))
-		cur = indexBucket.Bucket(postownerKey).Cursor()
-		prefixs = [][]byte{prefix}
-	} else {
-		c := metaBucket.Cursor()
-		var k, v []byte
-		if offsetPkey != nil {
-			k, v = c.Seek(offsetPkey)
-		} else {
-			if orderASC {
-				k, v = c.First()
-			} else {
-				k, v = c.Last()
-			}
-		}
-		for {
-			if k == nil {
-				break
-			}
-			post, err := q.PostFromBytes(v)
-			if err == nil && bytes.Equal(post.PKey[:], k) {
-				if len(res.Keys) > 0 {
-					tx.readKV(post, res.Keys)
-				}
-				if res.Filter(*post.Clone()) {
-					posts = append(posts, *post)
-					n++
-					if res.Limit > 0 && n >= res.Limit {
-						break
-					}
-				}
-			}
-			if orderASC {
-				k, v = c.Next()
-			} else {
-				k, v = c.Prev()
-			}
-		}
+		indexCur = indexBucket.Bucket(postownerKey).Cursor()
+		prefixs = [][]byte{toPrefix(res.Owner)}
 	}
 
-	if cur != nil {
+	if indexCur != nil {
 		pl := len(prefixs)
-		a := make([][]*q.Post, pl)
+		a := make([][]*post.Post, pl)
 		for i, prefix := range prefixs {
 			var k []byte
-			if offsetPkey != nil {
+			if anchorPkey != nil {
 				p := make([]byte, len(prefix)+12)
 				copy(p, prefix)
-				copy(p[len(prefix):], offsetPkey)
-				k, _ = cur.Seek(p)
+				copy(p[len(prefix):], anchorPkey)
+				k, _ = indexCur.Seek(p)
 			} else {
-				k, _ = cur.Seek(prefix)
+				k, _ = indexCur.Seek(prefix)
 			}
 
 			ok := func(k []byte) bool {
@@ -149,14 +106,14 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 			}
 
 			// move cursor to the last key firstly when order by DESC
-			if !orderASC && offsetPkey == nil {
+			if !orderASC && anchorPkey == nil {
 				for {
-					k, _ = cur.Next()
+					k, _ = indexCur.Next()
 					if k == nil {
-						k, _ = cur.Last()
+						k, _ = indexCur.Last()
 						break
 					} else if !ok(k) {
-						k, _ = cur.Prev()
+						k, _ = indexCur.Prev()
 						break
 					}
 				}
@@ -171,21 +128,24 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 					if i == 0 {
 						data := metaBucket.Get(pkey)
 						if data != nil {
-							post, err := q.PostFromBytes(data)
+							post, err := post.PostFromBytes(data)
 							if err == nil && bytes.Equal(post.PKey[:], pkey) && (filter == nil || filter(post) == true) {
 								if len(res.Keys) > 0 {
 									tx.readKV(post, res.Keys)
 								}
 								if res.Filter(*post.Clone()) {
 									if pl == 1 {
-										posts = append(posts, *post)
+										if res.Offset == 0 || n >= res.Offset {
+											posts = append(posts, *post)
+										}
+										n++
+										if res.Limit > 0 && uint32(len(posts)) >= res.Limit {
+											return
+										}
 									} else {
 										a[0] = append(a[0], post)
 									}
 									n++
-									if res.Limit > 0 && n >= res.Limit {
-										break
-									}
 								}
 							}
 						}
@@ -193,7 +153,13 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 						for _, p := range past {
 							if bytes.Equal(p.PKey[:], pkey) {
 								if i == pl-1 {
-									posts = append(posts, *p)
+									if res.Offset == 0 || n >= res.Offset {
+										posts = append(posts, *p)
+									}
+									n++
+									if res.Limit > 0 && uint32(len(posts)) >= res.Limit {
+										return
+									}
 								} else {
 									a[i] = append(a[i], p)
 								}
@@ -202,17 +168,54 @@ func (tx *Tx) List(qs ...q.Query) (posts []q.Post) {
 					}
 				}
 				if orderASC {
-					k, _ = cur.Next()
+					k, _ = indexCur.Next()
 				} else {
-					k, _ = cur.Prev()
+					k, _ = indexCur.Prev()
 				}
+			}
+		}
+	} else {
+		c := metaBucket.Cursor()
+		var k, v []byte
+		if anchorPkey != nil {
+			k, v = c.Seek(anchorPkey)
+		} else {
+			if orderASC {
+				k, v = c.First()
+			} else {
+				k, v = c.Last()
+			}
+		}
+		for {
+			if k == nil {
+				break
+			}
+			post, err := post.PostFromBytes(v)
+			if err == nil && bytes.Equal(post.PKey[:], k) {
+				if len(res.Keys) > 0 {
+					tx.readKV(post, res.Keys)
+				}
+				if res.Filter(*post.Clone()) {
+					if res.Offset == 0 || n >= res.Offset {
+						posts = append(posts, *post)
+					}
+					n++
+					if res.Limit > 0 && uint32(len(posts)) >= res.Limit {
+						return
+					}
+				}
+			}
+			if orderASC {
+				k, v = c.Next()
+			} else {
+				k, v = c.Prev()
 			}
 		}
 	}
 	return
 }
 
-func (tx *Tx) readKV(post *q.Post, keys []string) {
+func (tx *Tx) readKV(post *post.Post, keys []string) {
 	postkvBucket := tx.bucket(postkvKey).Bucket([]byte(post.ID))
 	if postkvBucket == nil {
 		return
@@ -249,7 +252,7 @@ func (tx *Tx) readKV(post *q.Post, keys []string) {
 }
 
 // Get returns the post
-func (tx *Tx) Get(qs ...q.Query) (*q.Post, error) {
+func (tx *Tx) Get(qs ...q.Query) (*post.Post, error) {
 	var res q.Resolver
 	for _, q := range qs {
 		q.Resolve(&res)
@@ -267,7 +270,7 @@ func (tx *Tx) Get(qs ...q.Query) (*q.Post, error) {
 		return nil, ErrNotFound
 	}
 
-	post, err := q.PostFromBytes(metadata)
+	post, err := post.PostFromBytes(metadata)
 	if err != nil {
 		return nil, err
 	}
@@ -280,12 +283,12 @@ func (tx *Tx) Get(qs ...q.Query) (*q.Post, error) {
 }
 
 // Put puts a new post
-func (tx *Tx) Put(qs ...q.Query) (*q.Post, error) {
+func (tx *Tx) Put(qs ...q.Query) (*post.Post, error) {
 	indexBucket := tx.bucket(postindexKey)
 	idIndexBucket := indexBucket.Bucket(postidKey)
 
 RE:
-	post := q.NewPost()
+	post := post.New()
 	for _, q := range qs {
 		q.Apply(post)
 	}
@@ -304,7 +307,7 @@ RE:
 }
 
 // PutPost puts a new post
-func (tx *Tx) PutPost(post *q.Post) (err error) {
+func (tx *Tx) PutPost(post *post.Post) (err error) {
 	metaBucket := tx.bucket(postmetaKey)
 	indexBucket := tx.bucket(postindexKey)
 	kvBucket := tx.bucket(postkvKey)

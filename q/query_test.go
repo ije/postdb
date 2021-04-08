@@ -2,22 +2,24 @@ package q
 
 import (
 	"testing"
+
+	"github.com/postui/postdb/post"
 )
 
 func TestQuery(t *testing.T) {
 	var res Resolver
-	id := NewID()
-	aid := NewID()
+	id := post.NewID()
+	id2 := post.NewID()
 	for _, q := range []Query{
 		ID(id),
-		ID(aid),
+		ID(id2),
 		Owner("admin"),
 		Status(1),
 		Tags("hello", "world"),
 		Tags("world", "世界"),
-		K("title", "content", "*", "content"),
-		Offset(aid),
-		Anchor(aid),
+		Select("title", "date ", "content", "content"),
+		Anchor(id2),
+		Offset(2),
 		Limit(100),
 		Order(DESC),
 	} {
@@ -28,10 +30,16 @@ func TestQuery(t *testing.T) {
 	toBe(t, "Owner", res.Owner, "admin")
 	toBe(t, "Tags", len(res.Tags), 3)
 	toBe(t, "Keys", len(res.Keys), 3)
-	toBe(t, "Anchor", res.Anchor, aid)
-	toBe(t, "Offset", res.Offset, aid)
+	toBe(t, "Anchor", res.Anchor, id2)
+	toBe(t, "Offset", res.Offset, uint32(2))
 	toBe(t, "Limit", res.Limit, uint32(100))
 	toBe(t, "Order", res.Order, DESC)
 
 	t.Log(res)
+}
+
+func toBe(t *testing.T, name string, a interface{}, b interface{}) {
+	if a != b {
+		t.Fatalf("the %s should equal to %v, but %v", name, b, a)
+	}
 }

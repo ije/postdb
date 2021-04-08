@@ -1,4 +1,4 @@
-package q
+package post
 
 import (
 	"encoding/binary"
@@ -28,13 +28,13 @@ type Post struct {
 	Crtime  uint32
 	Modtime uint32
 	Tags    []string
-	KV      KV
+	KV      map[string][]byte
 	// todo: Rank uint32
 	// todo: Revision uint32
 }
 
-// NewPost returns a new post.
-func NewPost() *Post {
+// New returns a new post.
+func New() *Post {
 	now := uint32(time.Now().Unix())
 	post := &Post{
 		PKey:    xid.New(),
@@ -43,7 +43,7 @@ func NewPost() *Post {
 		Crtime:  now,
 		Modtime: now,
 		Tags:    []string{},
-		KV:      KV{},
+		KV:      map[string][]byte{},
 	}
 	return post
 }
@@ -132,32 +132,8 @@ func decodeV1(data []byte) (*Post, error) {
 		Crtime:  crtime,
 		Modtime: modtime,
 		Tags:    tags,
-		KV:      KV{},
+		KV:      map[string][]byte{},
 	}, nil
-}
-
-// Clone clones the post
-func (p *Post) Clone(qs ...Query) *Post {
-	clone := &Post{
-		PKey:    p.PKey,
-		ID:      p.ID,
-		Alias:   p.Alias,
-		Owner:   p.Owner,
-		Status:  p.Status,
-		Crtime:  p.Crtime,
-		Modtime: p.Modtime,
-		Tags:    make([]string, len(p.Tags)),
-		KV:      KV{},
-	}
-	for i, t := range p.Tags {
-		clone.Tags[i] = t
-	}
-	for k, v := range p.KV {
-		b := make([]byte, len(v))
-		copy(b, v)
-		clone.KV[k] = b
-	}
-	return clone
 }
 
 // MetaData returns the meta data of post.
@@ -214,4 +190,28 @@ func (p *Post) MetaData() []byte {
 	}
 	buf[i] = checksum
 	return buf
+}
+
+// Clone clones the post
+func (p *Post) Clone() *Post {
+	clone := &Post{
+		PKey:    p.PKey,
+		ID:      p.ID,
+		Alias:   p.Alias,
+		Owner:   p.Owner,
+		Status:  p.Status,
+		Crtime:  p.Crtime,
+		Modtime: p.Modtime,
+		Tags:    make([]string, len(p.Tags)),
+		KV:      map[string][]byte{},
+	}
+	for i, t := range p.Tags {
+		clone.Tags[i] = t
+	}
+	for k, v := range p.KV {
+		b := make([]byte, len(v))
+		copy(b, v)
+		clone.KV[k] = b
+	}
+	return clone
 }

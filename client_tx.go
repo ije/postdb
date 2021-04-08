@@ -3,6 +3,7 @@ package postdb
 import (
 	"io"
 
+	"github.com/postui/postdb/post"
 	"github.com/postui/postdb/q"
 )
 
@@ -12,17 +13,17 @@ type ClientTx struct {
 }
 
 // List returns some posts
-func (tx *ClientTx) List(qs ...q.Query) (posts []q.Post) {
+func (tx *ClientTx) List(qs ...q.Query) (posts []post.Post) {
 	return nil
 }
 
 // Get returns the post
-func (tx *ClientTx) Get(qs ...q.Query) (*q.Post, error) {
+func (tx *ClientTx) Get(qs ...q.Query) (*post.Post, error) {
 	return nil, nil
 }
 
 // Put puts a new post
-func (tx *ClientTx) Put(qs ...q.Query) (*q.Post, error) {
+func (tx *ClientTx) Put(qs ...q.Query) (*post.Post, error) {
 
 	return nil, nil
 }

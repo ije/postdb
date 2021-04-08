@@ -1,5 +1,7 @@
 package q
 
+import "github.com/postui/postdb/post"
+
 // A KV map
 type KV map[string][]byte
 
@@ -26,7 +28,7 @@ func (kv KV) Del(key string) {
 }
 
 // Apply implements the Query interface
-func (kv KV) Apply(p *Post) {
+func (kv KV) Apply(p *post.Post) {
 	if p.KV == nil {
 		p.KV = KV{}
 	}
