@@ -27,7 +27,7 @@ defer db.Close()
 db.List()
 
 // get posts with query
-db.List(q.Tags("tag1", "tag2"), q.Limit(100), q.Order(q.DESC), q.Select("title", "date", "content"))
+db.List(q.Tags("foo", "bar"), q.Range(1, 100), q.Order(q.DESC), q.Select("title", "date", "content"))
 
 // get post without kv
 db.Get(q.ID(id))
@@ -42,16 +42,16 @@ db.Get(q.ID(id), q.Select("title_*")) // match key in title_en,title_zh...
 db.Get(q.ID(id), q.Select("*"))
 
 // add a new post
-db.Put(q.Alias(alias), q.Status(1), q.Tags("tag1", "tag2"), q.KV{"k": []byte("v")})
+db.Put(q.Alias(alias), q.Status(1), q.Tags("foo", "bar"), q.KV{"foo": []byte("bar")})
 
 // update the existing post
-db.Update(q.ID(id), q.KV{"k": []byte("v2")})
+db.Update(q.ID(id), q.KV{"foo": []byte("cool")})
 
 // move the existing post
 db.MoveTo(q.ID(id), q.Anchor(id))
 
 // delete the existing post kv
-db.DeleteKV(q.ID(id), q.Select("k"))
+db.DeleteKV(q.ID(id), q.Select("foo"))
 
 // delete the existing posts
 db.Delete(q.ID(id))
