@@ -6,14 +6,12 @@
 
 A database to store your posts in [Go](https://golang.org) with [BoltDB](https://github.com/etcd-io/bbolt), noSQL.
 
-## Installing
+## Installation
 ```bash
 go get github.com/postui/postdb
 ```
 
 ## Usage
-
-as an embedded database:
 
 ```go
 // opening a database
@@ -65,50 +63,3 @@ ns.Get(q.ID(id))
 // backup the entire database
 db.WriteTo(w)
 ```
-
-as server of C/S:
-
-```go
-// create a server
-s := &postdb.Server{
-    DBPath: "/path",
-    Port:   9000,
-}
-
-// create a new database user
-s.CreateUser("USERNAME", "PASS")
-s.CreateDB("DBNAME", "OWNER")
-
-// start the server
-s.Serve()
-```
-
-as client of C/S:
-
-```go
-// connect to server
-client, err := postdb.Connect(postdb.ConnConfig{
-    Host:     "localhost"
-    Port:     9000,
-    User:     "USERNAME",
-    Password: "PASS",
-})
-if err != nil {
-    return err
-}
-
-// opening a client database
-db, err := client.DB("name")
-if err != nil {
-    return err
-}
-
-// use the client database
-db.List()
-db.Get(q.ID(id))
-...
-```
-
-#  
-
-Copyright (c) 2020-present, [postUI lab.](https://postui.com)
