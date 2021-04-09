@@ -18,16 +18,22 @@ func TestDB(t *testing.T) {
 	defer db.Close()
 
 	// flush
-	_, err = db.Delete(q.Owner("admin"))
+	_, err = db.Delete(q.Owner("tester"))
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	posts, err := db.List(q.Owner("tester"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	toBe(t, "posts length", len(posts), 0)
 
 	for i := 0; i < 10; i++ {
 		_, err := db.Put(
 			q.Alias(fmt.Sprintf("hello-world-%d", i+1)),
 			q.Status(1),
-			q.Owner("admin"),
+			q.Owner("tester"),
 			q.Tags("hello", "world"),
 			q.KV{
 				"title": []byte(fmt.Sprintf("Hello World #%d", i+1)),
@@ -38,6 +44,35 @@ func TestDB(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+
+	tp, err := db.Put(
+		q.Alias("tmp"),
+		q.Owner("tester"),
+		q.KV{
+			"title": []byte("Hello World!"),
+			"date":  []byte(time.Now().Format(http.TimeFormat)),
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	posts, err = db.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	toBe(t, "posts length", len(posts), 11)
+
+	_, err = db.Delete(q.ID(tp.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	posts, err = db.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	toBe(t, "posts length", len(posts), 10)
 
 	postZh, err := db.Put(
 		q.Alias("hello-world-cn"),
@@ -53,7 +88,7 @@ func TestDB(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	posts, err := db.List(q.Tags("world"))
+	posts, err = db.List(q.Tags("world"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +98,7 @@ func TestDB(t *testing.T) {
 		q.ID(postZh.ID),
 		q.Alias("hello-world-zh"),
 		q.Status(2),
-		q.Owner("admin"),
+		q.Owner("tester"),
 		q.Tags("你好", "世界"),
 		q.KV{
 			"title":  []byte("你好世界！"),
@@ -86,7 +121,7 @@ func TestDB(t *testing.T) {
 	}
 	toBe(t, "postZh.Alias", postZh.Alias, "hello-world-zh")
 	toBe(t, "postZh.Status", postZh.Status, uint8(2))
-	toBe(t, "postZh.Owner", postZh.Owner, "admin")
+	toBe(t, "postZh.Owner", postZh.Owner, "tester")
 	toBe(t, "postZh.Tags", strings.Join(postZh.Tags, " "), "你好 世界")
 	toBe(t, "postZh.KV.title", string(postZh.KV["title"]), "你好世界！")
 	toBe(t, "postZh.KV.date", strings.HasSuffix(string(postZh.KV["date"]), ":)"), true)
