@@ -30,23 +30,15 @@ func (tx *Tx) List(qs ...q.Query) (posts []post.Post) {
 	var prefixs [][]byte
 	var filter func(*post.Post) bool
 	var n uint32
-
 	var res q.Resolver
+
 	for _, q := range qs {
 		q.Resolve(&res)
 	}
-
 	queryOwner := len(res.Owner) > 0
 	orderASC := res.Order >= q.ASC
 
-	var anchorPkey []byte
-	if len(res.Anchor) > 0 {
-		anchorPkey = idIndexBucket.Get([]byte(res.Anchor))
-		if anchorPkey == nil {
-			return
-		}
-	}
-
+	/* query post list by the IDs */
 	if len(res.IDs) > 0 {
 		posts = make([]post.Post, len(res.IDs))
 		for i, id := range res.IDs {
@@ -68,7 +60,18 @@ func (tx *Tx) List(qs ...q.Query) (posts []post.Post) {
 			}
 		}
 		posts = posts[:n]
-	} else if len(res.Tags) > 0 {
+		return
+	}
+
+	var anchorPkey []byte
+	if len(res.Anchor) > 0 {
+		anchorPkey = idIndexBucket.Get([]byte(res.Anchor))
+		if anchorPkey == nil {
+			return
+		}
+	}
+
+	if len(res.Tags) > 0 {
 		indexCur = indexBucket.Bucket(keyPostTag).Cursor()
 		prefixs = make([][]byte, len(res.Tags))
 		for i, tag := range res.Tags {
@@ -145,7 +148,6 @@ func (tx *Tx) List(qs ...q.Query) (posts []post.Post) {
 									} else {
 										a[0] = append(a[0], post)
 									}
-									n++
 								}
 							}
 						}
@@ -289,15 +291,15 @@ func (tx *Tx) Put(qs ...q.Query) (*post.Post, error) {
 
 RE:
 	post := post.New()
-	for _, q := range qs {
-		q.Apply(post)
-	}
 	// ensure the post.ID is unique
 	if idIndexBucket.Get([]byte(post.ID)) != nil {
 		log.Printf("[warn] duplicate id %s", post.ID)
 		goto RE
 	}
 
+	for _, q := range qs {
+		q.Apply(post)
+	}
 	err := tx.PutPost(post)
 	if err != nil {
 		return nil, err
@@ -623,6 +625,9 @@ func (tx *Tx) Delete(qs ...q.Query) (n int, err error) {
 		}
 
 		err = kvBucket.DeleteBucket([]byte(post.ID))
+		if err == bolt.ErrBucketNotFound {
+			err = nil
+		}
 		if err != nil {
 			return
 		}
