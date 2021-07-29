@@ -4,7 +4,7 @@
 [![GoReport](https://goreportcard.com/badge/github.com/postui/postdb)](https://goreportcard.com/report/github.com/postui/postdb)
 [![MIT](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
-A database to store your posts in [Go](https://golang.org) with [BoltDB](https://github.com/etcd-io/bbolt), noSQL.
+A database to store posts in [Go](https://golang.org) with [BoltDB](https://github.com/etcd-io/bbolt), noSQL.
 
 ## Installation
 ```bash
@@ -54,7 +54,7 @@ db.DeleteKV(q.ID(id), q.Select("foo"))
 // delete the existing posts
 db.Delete(q.ID(id))
 
-// with namespace
+// using namespace
 ns := db.Namespace("name")
 ns.List()
 ns.Get(q.ID(id))
