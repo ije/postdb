@@ -40,7 +40,7 @@ db.Get(q.ID(id), q.Select("title_*")) // match key in title_en,title_zh...
 db.Get(q.ID(id), q.Select("*"))
 
 // add a new post
-db.Put(q.Alias(alias), q.Status(1), q.Tags("foo", "bar"), q.KV{"foo": []byte("bar")})
+db.Put(q.Alias(name), q.Status(1), q.Tags("foo", "bar"), q.KV{"foo": []byte("bar")})
 
 // update the existing post
 db.Update(q.ID(id), q.KV{"foo": []byte("cool")})
@@ -48,7 +48,7 @@ db.Update(q.ID(id), q.KV{"foo": []byte("cool")})
 // move the existing post
 db.MoveTo(q.ID(id), q.Anchor(id))
 
-// delete the existing post kv
+// delete the existing kv of the post
 db.DeleteKV(q.ID(id), q.Select("foo"))
 
 // delete the existing posts
