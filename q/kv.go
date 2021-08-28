@@ -22,8 +22,8 @@ func (kv KV) Set(key string, value []byte) {
 	kv[key] = value
 }
 
-// Del deletes the values associated with key.
-func (kv KV) Del(key string) {
+// Delete deletes the values associated with key.
+func (kv KV) Delete(key string) {
 	delete(kv, key)
 }
 

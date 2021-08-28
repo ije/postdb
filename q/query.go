@@ -1,6 +1,9 @@
 package q
 
-import "github.com/postui/postdb/post"
+import (
+	"github.com/postui/postdb/post"
+	"github.com/postui/postdb/utils"
+)
 
 const (
 	// DESC specifies the order of DESC
@@ -20,22 +23,6 @@ type Query interface {
 	Apply(*post.Post)
 }
 
-type idQuery string
-type idsQuery []string
-type aliasQuery string
-type ownerQuery string
-type statusQuery uint8
-type tagsQuery []string
-type keysQuery []string
-type anchorQuery string
-type offsetQuery uint32
-type limitQuery uint32
-type rangeQuery [2]uint32
-type orderQuery uint8
-type filterQuery struct {
-	T func(post.Post) bool
-}
-
 // ID returns an id Query
 func ID(id string) Query {
 	return idQuery(id)
@@ -43,7 +30,7 @@ func ID(id string) Query {
 
 // IDs returns a IDs Query
 func IDs(ids ...string) Query {
-	return idsQuery(noRepeat(ids))
+	return idsQuery(utils.NoRepeat(ids))
 }
 
 // Alias returns a alias Query
@@ -63,12 +50,12 @@ func Status(status uint8) Query {
 
 // Tags returns a tags Query
 func Tags(tags ...string) Query {
-	return tagsQuery(noRepeat(tags))
+	return tagsQuery(utils.NoRepeat(tags))
 }
 
 // Select returns a keys Query
 func Select(keys ...string) Query {
-	return keysQuery(noRepeat(keys))
+	return keysQuery(utils.NoRepeat(keys))
 }
 
 // Anchor returns a anchor Query
@@ -99,138 +86,4 @@ func Order(order uint8) Query {
 // Filter returns a filter Query
 func Filter(fn func(post.Post) bool) Query {
 	return filterQuery{fn}
-}
-
-// Apply implements the Query interface
-func (q idQuery) Apply(p *post.Post) {}
-
-// Resolve implements the Query interface
-func (q idQuery) Resolve(r *Resolver) {
-	r.IDs = append(r.IDs, string(q))
-}
-
-// Apply implements the Query interface
-func (q idsQuery) Apply(p *post.Post) {}
-
-// Resolve implements the Query interface
-func (q idsQuery) Resolve(r *Resolver) {
-	r.IDs = append(r.IDs, q...)
-}
-
-// Apply implements the Query interface
-func (q aliasQuery) Apply(p *post.Post) {
-	p.Alias = string(q)
-}
-
-// Resolve implements the Query interface
-func (q aliasQuery) Resolve(r *Resolver) {
-	r.IDs = append(r.IDs, string(q))
-}
-
-// Apply implements the Query interface
-func (q ownerQuery) Apply(p *post.Post) {
-	p.Owner = string(q)
-}
-
-// Resolve implements the Query interface
-func (q ownerQuery) Resolve(r *Resolver) {
-	r.Owner = string(q)
-}
-
-// Apply implements the Query interface
-func (q statusQuery) Apply(p *post.Post) {
-	p.Status = uint8(q)
-}
-
-// Resolve implements the Query interface
-func (q statusQuery) Resolve(r *Resolver) {
-	r.Filters = append(r.Filters, func(p post.Post) bool {
-		return p.Status == uint8(q)
-	})
-}
-
-// Apply implements the Query interface
-func (q tagsQuery) Apply(p *post.Post) {
-	p.Tags = q
-}
-
-// Resolve implements the Query interface
-func (q tagsQuery) Resolve(r *Resolver) {
-	tags := append(r.Tags, q...)
-	r.Tags = noRepeat(tags)
-}
-
-// Apply implements the Query interface
-func (q keysQuery) Apply(p *post.Post) {}
-
-// Resolve implements the Query interface
-func (q keysQuery) Resolve(r *Resolver) {
-	keys := append(r.Keys, q...)
-	r.Keys = noRepeat(keys)
-}
-
-// Apply implements the Query interface
-func (q anchorQuery) Apply(p *post.Post) {}
-
-// Resolve implements the Query interface
-func (q anchorQuery) Resolve(r *Resolver) {
-	r.Anchor = string(q)
-}
-
-// Apply implements the Query interface
-func (q offsetQuery) Apply(p *post.Post) {}
-
-// Resolve implements the Query interface
-func (q offsetQuery) Resolve(r *Resolver) {
-	r.Offset = uint32(q)
-}
-
-// Apply implements the Query interface
-func (q limitQuery) Apply(p *post.Post) {}
-
-// Resolve implements the Query interface
-func (q limitQuery) Resolve(r *Resolver) {
-	r.Limit = uint32(q)
-}
-
-// Apply implements the Query interface
-func (q rangeQuery) Apply(p *post.Post) {}
-
-// Resolve implements the Query interface
-func (q rangeQuery) Resolve(r *Resolver) {
-	r.Offset = q[0]
-	r.Limit = q[1]
-}
-
-// Apply implements the Query interface
-func (q orderQuery) Apply(p *post.Post) {}
-
-// Resolve implements the Query interface
-func (q orderQuery) Resolve(r *Resolver) {
-	r.Order = uint8(q)
-}
-
-// Apply implements the Query interface
-func (f filterQuery) Apply(p *post.Post) {}
-
-// Resolve implements the Query interface
-func (f filterQuery) Resolve(r *Resolver) {
-	r.Filters = append(r.Filters, f.T)
-}
-
-func noRepeat(arr []string) []string {
-	set := map[string]struct{}{}
-	a := make([]string, len(arr))
-	i := 0
-	for _, item := range arr {
-		if item != "" {
-			_, ok := set[item]
-			if !ok {
-				set[item] = struct{}{}
-				a[i] = item
-				i++
-			}
-		}
-	}
-	return a[:i]
 }

@@ -12,7 +12,7 @@ func TestPostMeta(t *testing.T) {
 	post.Tags = []string{"hello", "world"}
 
 	metadata := post.MetaData()
-	_post, err := PostFromBytes(metadata)
+	_post, err := FromBytes(metadata)
 	if err != nil {
 		t.Fatal(err)
 	}

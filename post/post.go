@@ -48,8 +48,8 @@ func New() *Post {
 	return post
 }
 
-// PostFromBytes parses a post from bytes.
-func PostFromBytes(data []byte) (post *Post, err error) {
+// FromBytes parses a post from bytes.
+func FromBytes(data []byte) (post *Post, err error) {
 	dl := len(data)
 	if dl < 6 {
 		return nil, ErrPostMeta
@@ -205,9 +205,7 @@ func (p *Post) Clone() *Post {
 		Tags:    make([]string, len(p.Tags)),
 		KV:      map[string][]byte{},
 	}
-	for i, t := range p.Tags {
-		clone.Tags[i] = t
-	}
+	copy(clone.Tags, p.Tags)
 	for k, v := range p.KV {
 		b := make([]byte, len(v))
 		copy(b, v)

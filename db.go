@@ -8,6 +8,7 @@ import (
 
 	"github.com/postui/postdb/post"
 	"github.com/postui/postdb/q"
+	"github.com/postui/postdb/utils"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -78,12 +79,12 @@ func (db *DB) Namespace(name string) *NS {
 				keyPostIndex,
 				keyPostKV,
 			} {
-				_, err := tx.CreateBucketIfNotExists(join([]byte(name), key, 0))
+				_, err := tx.CreateBucketIfNotExists(utils.Join([]byte(name), key, 0))
 				if err != nil {
 					return err
 				}
 			}
-			indexBucket := tx.Bucket(join([]byte(name), keyPostIndex, 0))
+			indexBucket := tx.Bucket(utils.Join([]byte(name), keyPostIndex, 0))
 			for _, key := range [][]byte{
 				keyPostID,
 				keyPostOwner,
