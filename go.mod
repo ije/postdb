@@ -1,4 +1,4 @@
-module github.com/postui/postdb
+module github.com/ije/postdb
 
 go 1.16
 

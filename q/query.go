@@ -1,8 +1,8 @@
 package q
 
 import (
-	"github.com/postui/postdb/post"
-	"github.com/postui/postdb/utils"
+	"github.com/ije/postdb/post"
+	"github.com/ije/postdb/util"
 )
 
 const (
@@ -30,7 +30,7 @@ func ID(id string) Query {
 
 // IDs returns a IDs Query
 func IDs(ids ...string) Query {
-	return idsQuery(utils.NoRepeat(ids))
+	return idsQuery(util.NoRepeat(ids))
 }
 
 // Alias returns a alias Query
@@ -50,12 +50,12 @@ func Status(status uint8) Query {
 
 // Tags returns a tags Query
 func Tags(tags ...string) Query {
-	return tagsQuery(utils.NoRepeat(tags))
+	return tagsQuery(util.NoRepeat(tags))
 }
 
 // Select returns a keys Query
 func Select(keys ...string) Query {
-	return keysQuery(utils.NoRepeat(keys))
+	return keysQuery(util.NoRepeat(keys))
 }
 
 // Anchor returns a anchor Query

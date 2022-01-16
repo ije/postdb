@@ -1,8 +1,8 @@
 package q
 
 import (
-	"github.com/postui/postdb/post"
-	"github.com/postui/postdb/utils"
+	"github.com/ije/postdb/post"
+	"github.com/ije/postdb/util"
 )
 
 type idQuery string
@@ -73,7 +73,7 @@ func (q tagsQuery) Apply(p *post.Post) {
 // Resolve implements the Query interface
 func (q tagsQuery) Resolve(r *Resolver) {
 	tags := append(r.Tags, q...)
-	r.Tags = utils.NoRepeat(tags)
+	r.Tags = util.NoRepeat(tags)
 }
 
 type keysQuery []string
@@ -84,7 +84,7 @@ func (q keysQuery) Apply(p *post.Post) {}
 // Resolve implements the Query interface
 func (q keysQuery) Resolve(r *Resolver) {
 	keys := append(r.Keys, q...)
-	r.Keys = utils.NoRepeat(keys)
+	r.Keys = util.NoRepeat(keys)
 }
 
 type anchorQuery string

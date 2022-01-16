@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/postui/postdb/q"
+	"github.com/ije/postdb/q"
 )
 
 func TestNS(t *testing.T) {

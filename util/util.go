@@ -1,13 +1,13 @@
-package utils
+package util
 
-// prefix creates a prefix
+// ToPrefix creates a prefix bytes
 func ToPrefix(a string) []byte {
 	buf := make([]byte, 1+len(a))
 	copy(buf, a)
 	return buf
 }
 
-// join joins a and b by char c
+// Join joins a and b by char c
 func Join(a []byte, b []byte, c byte) []byte {
 	l := len(a)
 	buf := make([]byte, l+1+len(b))
@@ -17,7 +17,7 @@ func Join(a []byte, b []byte, c byte) []byte {
 	return buf
 }
 
-// contains reports whether b is within a.
+// Contains reports whether b is within a.
 func Contains(a []string, b []string) bool {
 	if len(a) < len(b) {
 		return false
@@ -32,6 +32,7 @@ func Contains(a []string, b []string) bool {
 	return true
 }
 
+// NoRepeat removes repeated values in the slice
 func NoRepeat(s []string) []string {
 	set := map[string]struct{}{}
 	a := make([]string, len(s))

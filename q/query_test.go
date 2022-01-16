@@ -3,7 +3,7 @@ package q
 import (
 	"testing"
 
-	"github.com/postui/postdb/post"
+	"github.com/ije/postdb/post"
 )
 
 func TestQuery(t *testing.T) {

@@ -1,6 +1,6 @@
 package q
 
-import "github.com/postui/postdb/post"
+import "github.com/ije/postdb/post"
 
 // A KV map
 type KV map[string][]byte

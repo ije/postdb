@@ -1,19 +1,24 @@
 # PostDB
 
-[![GoDoc](https://godoc.org/github.com/postui/postdb?status.svg)](https://godoc.org/github.com/postui/postdb)
-[![GoReport](https://goreportcard.com/badge/github.com/postui/postdb)](https://goreportcard.com/report/github.com/postui/postdb)
+[![GoDoc](https://godoc.org/github.com/ije/postdb?status.svg)](https://godoc.org/github.com/ije/postdb)
+[![GoReport](https://goreportcard.com/badge/github.com/ije/postdb)](https://goreportcard.com/report/github.com/ije/postdb)
 [![MIT](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 A database to store posts in [Go](https://golang.org) with [BoltDB](https://github.com/etcd-io/bbolt), noSQL.
 
 ## Installation
 ```bash
-go get github.com/postui/postdb
+go get github.com/ije/postdb
 ```
 
 ## Usage
 
 ```go
+import (
+	"github.com/ije/postdb"
+	"github.com/ije/postdb/q"
+)
+
 // opening a database
 db, err := postdb.Open("post.db", 0666)
 if err != nil {
