@@ -11,7 +11,7 @@ import (
 )
 
 func TestDB(t *testing.T) {
-	db, err := Open("test.db", 0666)
+	db, err := Open("test.db", 0666, false)
 	if err != nil {
 		t.Fatal(err)
 	}

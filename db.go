@@ -20,40 +20,43 @@ type DB struct {
 }
 
 // Open opens a database at the given path.
-func Open(path string, mode os.FileMode) (db *DB, err error) {
+func Open(path string, mode os.FileMode, readonly bool) (db *DB, err error) {
 	b, err := bolt.Open(path, mode, &bolt.Options{
-		Timeout: 1 * time.Second,
+		ReadOnly: readonly,
+		Timeout:  1 * time.Second,
 	})
 	if err != nil {
 		return
 	}
 
-	err = b.Update(func(tx *bolt.Tx) error {
-		for _, key := range [][]byte{
-			keyPostMeta,
-			keyPostIndex,
-			keyPostKV,
-		} {
-			_, err := tx.CreateBucketIfNotExists(key)
-			if err != nil {
-				return err
+	if !readonly {
+		err = b.Update(func(tx *bolt.Tx) error {
+			for _, key := range [][]byte{
+				keyPostMeta,
+				keyPostIndex,
+				keyPostKV,
+			} {
+				_, err := tx.CreateBucketIfNotExists(key)
+				if err != nil {
+					return err
+				}
 			}
-		}
-		indexBucket := tx.Bucket(keyPostIndex)
-		for _, key := range [][]byte{
-			keyPostID,
-			keyPostOwner,
-			keyPostTag,
-		} {
-			_, err := indexBucket.CreateBucketIfNotExists(key)
-			if err != nil {
-				return err
+			indexBucket := tx.Bucket(keyPostIndex)
+			for _, key := range [][]byte{
+				keyPostID,
+				keyPostOwner,
+				keyPostTag,
+			} {
+				_, err := indexBucket.CreateBucketIfNotExists(key)
+				if err != nil {
+					return err
+				}
 			}
+			return nil
+		})
+		if err != nil {
+			return
 		}
-		return nil
-	})
-	if err != nil {
-		return
 	}
 
 	db = &DB{

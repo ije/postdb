@@ -10,7 +10,7 @@ import (
 )
 
 func TestNS(t *testing.T) {
-	db, err := Open("ns_test.db", 0666)
+	db, err := Open("ns_test.db", 0666, false)
 	if err != nil {
 		t.Fatal(err)
 	}
