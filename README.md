@@ -20,7 +20,7 @@ import (
 )
 
 // opening a database
-db, err := postdb.Open("post.db", 0666)
+db, err := postdb.Open("post.db", 0666, false)
 if err != nil {
     return err
 }
