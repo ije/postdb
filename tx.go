@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ije/postdb/post"
+	"github.com/ije/postdb/internal/post"
+	"github.com/ije/postdb/internal/util"
 	"github.com/ije/postdb/q"
-	"github.com/ije/postdb/util"
 	bolt "go.etcd.io/bbolt"
 )
 

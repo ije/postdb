@@ -1,7 +1,7 @@
 package postdb
 
 import (
-	"github.com/ije/postdb/post"
+	"github.com/ije/postdb/internal/post"
 	"github.com/ije/postdb/q"
 )
 
