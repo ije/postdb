@@ -50,13 +50,18 @@ func (ns *NS) Get(qs ...q.Query) (*post.Post, error) {
 
 // Put puts a new post
 func (ns *NS) Put(qs ...q.Query) (*post.Post, error) {
+	post := post.New()
+	for _, q := range qs {
+		q.Apply(post)
+	}
+
 	tx, err := ns.Begin(true)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
-	post, err := tx.Put(qs...)
+	err = tx.PutPost(post)
 	if err != nil {
 		return nil, err
 	}

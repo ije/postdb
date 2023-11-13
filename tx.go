@@ -286,19 +286,6 @@ func (tx *Tx) Get(qs ...q.Query) (*post.Post, error) {
 	return post, nil
 }
 
-// Put puts a new post
-func (tx *Tx) Put(qs ...q.Query) (*post.Post, error) {
-	post := post.New()
-	for _, q := range qs {
-		q.Apply(post)
-	}
-	err := tx.PutPost(post)
-	if err != nil {
-		return nil, err
-	}
-	return post, nil
-}
-
 // PutPost puts a new post
 func (tx *Tx) PutPost(post *post.Post) (err error) {
 	metaBucket := tx.bucket(keyPostMeta)
