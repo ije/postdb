@@ -2,7 +2,6 @@ package postdb
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -64,14 +63,6 @@ func (tx *Tx) List(qs ...q.Query) (posts []post.Post) {
 		return
 	}
 
-	var anchorPkey []byte
-	if len(res.Anchor) > 0 {
-		anchorPkey = idIndexBucket.Get([]byte(res.Anchor))
-		if anchorPkey == nil {
-			return
-		}
-	}
-
 	if len(res.Tags) > 0 {
 		indexCur = indexBucket.Bucket(keyPostTag).Cursor()
 		prefixs = make([][]byte, len(res.Tags))
@@ -92,16 +83,7 @@ func (tx *Tx) List(qs ...q.Query) (posts []post.Post) {
 		pl := len(prefixs)
 		a := make([][]*post.Post, pl)
 		for i, prefix := range prefixs {
-			var k []byte
-			if anchorPkey != nil {
-				p := make([]byte, len(prefix)+12)
-				copy(p, prefix)
-				copy(p[len(prefix):], anchorPkey)
-				k, _ = indexCur.Seek(p)
-			} else {
-				k, _ = indexCur.Seek(prefix)
-			}
-
+			k, _ := indexCur.Seek(prefix)
 			ok := func(k []byte) bool {
 				return len(k) == len(prefix)+12 && bytes.HasPrefix(k, prefix)
 			}
@@ -110,7 +92,7 @@ func (tx *Tx) List(qs ...q.Query) (posts []post.Post) {
 			}
 
 			// move cursor to the last key firstly when order by DESC
-			if !orderASC && anchorPkey == nil {
+			if !orderASC {
 				for {
 					k, _ = indexCur.Next()
 					if k == nil {
@@ -180,14 +162,10 @@ func (tx *Tx) List(qs ...q.Query) (posts []post.Post) {
 	} else {
 		c := metaBucket.Cursor()
 		var k, v []byte
-		if anchorPkey != nil {
-			k, v = c.Seek(anchorPkey)
+		if orderASC {
+			k, v = c.First()
 		} else {
-			if orderASC {
-				k, v = c.First()
-			} else {
-				k, v = c.Last()
-			}
+			k, v = c.Last()
 		}
 		for {
 			if k == nil {
@@ -488,33 +466,6 @@ func (tx *Tx) Update(qs ...q.Query) error {
 			return err
 		}
 	}
-
-	return nil
-}
-
-// MoveTo moves the post
-func (tx *Tx) MoveTo(qs ...q.Query) error {
-	post, err := tx.Get(qs...)
-	if err != nil {
-		return err
-	}
-
-	var res q.Resolver
-	for _, q := range qs {
-		q.Resolve(&res)
-	}
-
-	if res.Anchor == "" {
-		return errors.New("missing anchor id")
-	}
-
-	anchorPost, err := tx.Get(q.ID(res.Anchor))
-	if err != nil {
-		return err
-	}
-
-	post.PKey = anchorPost.PKey
-	// todo: implement moveTo function
 
 	return nil
 }

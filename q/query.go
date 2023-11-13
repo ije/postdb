@@ -58,11 +58,6 @@ func Select(keys ...string) Query {
 	return keysQuery(util.NoRepeat(keys))
 }
 
-// Anchor returns a anchor Query
-func Anchor(id string) Query {
-	return anchorQuery(id)
-}
-
 // Offset returns an offset Query
 func Offset(id uint32) Query {
 	return offsetQuery(id)

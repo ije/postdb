@@ -18,7 +18,6 @@ func TestQuery(t *testing.T) {
 		Tags("hello", "world"),
 		Tags("world", "世界"),
 		Select("title", "date ", "content", "content"),
-		Anchor(id2),
 		Offset(2),
 		Limit(100),
 		Order(DESC),
@@ -30,7 +29,6 @@ func TestQuery(t *testing.T) {
 	toBe(t, "Owner", res.Owner, "admin")
 	toBe(t, "Tags", len(res.Tags), 3)
 	toBe(t, "Keys", len(res.Keys), 3)
-	toBe(t, "Anchor", res.Anchor, id2)
 	toBe(t, "Offset", res.Offset, uint32(2))
 	toBe(t, "Limit", res.Limit, uint32(100))
 	toBe(t, "Order", res.Order, DESC)

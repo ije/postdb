@@ -9,7 +9,6 @@ type Resolver struct {
 	Tags    []string
 	Keys    []string
 	Owner   string
-	Anchor  string
 	Offset  uint32
 	Limit   uint32
 	Order   uint8

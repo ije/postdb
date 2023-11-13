@@ -87,16 +87,6 @@ func (q keysQuery) Resolve(r *Resolver) {
 	r.Keys = util.NoRepeat(keys)
 }
 
-type anchorQuery string
-
-// Apply implements the Query interface
-func (q anchorQuery) Apply(p *post.Post) {}
-
-// Resolve implements the Query interface
-func (q anchorQuery) Resolve(r *Resolver) {
-	r.Anchor = string(q)
-}
-
 type offsetQuery uint32
 
 // Apply implements the Query interface

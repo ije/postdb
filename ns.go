@@ -111,27 +111,6 @@ func (ns *NS) DeleteKV(qs ...q.Query) error {
 	return nil
 }
 
-// MoveTo moves the post
-func (ns *NS) MoveTo(qs ...q.Query) error {
-	tx, err := ns.Begin(true)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	err = tx.MoveTo(qs...)
-	if err != nil {
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // Delete deletes the post
 func (ns *NS) Delete(qs ...q.Query) (int, error) {
 	tx, err := ns.Begin(true)
