@@ -17,15 +17,15 @@ func TestNS(t *testing.T) {
 	defer db.Close()
 
 	// flush
-	_, err = db.Delete(q.Owner("admin"))
+	_, err = db.Delete(q.Owner(42))
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = db.NS("a").Delete(q.Owner("admin"))
+	_, err = db.NS("a").Delete(q.Owner(42))
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = db.NS("b").Delete(q.Owner("admin"))
+	_, err = db.NS("b").Delete(q.Owner(42))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestNS(t *testing.T) {
 		_, err := db.Put(
 			q.Alias(fmt.Sprintf("hello-world-%d", i+1)),
 			q.Status(1),
-			q.Owner("admin"),
+			q.Owner(42),
 			q.Tags("hello", "world"),
 			q.KV{
 				"title": []byte(fmt.Sprintf("Hello World #%d", i+1)),
@@ -50,7 +50,7 @@ func TestNS(t *testing.T) {
 		_, err := db.NS("a").Put(
 			q.Alias(fmt.Sprintf("hello-world-%d", i+1)),
 			q.Status(1),
-			q.Owner("admin"),
+			q.Owner(42),
 			q.Tags("hello", "world"),
 			q.KV{
 				"title": []byte(fmt.Sprintf("Hello World #%d", i+1)),
@@ -65,7 +65,7 @@ func TestNS(t *testing.T) {
 	_, err = db.NS("b").Put(
 		q.Alias("hello-world-zh"),
 		q.Status(1),
-		q.Owner("admin"),
+		q.Owner(42),
 		q.Tags("你好", "世界"),
 		q.KV{
 			"title": []byte("你好世界！"),

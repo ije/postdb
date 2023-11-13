@@ -43,7 +43,7 @@ func Open(path string, mode os.FileMode, readonly bool) (db *DB, err error) {
 			}
 			indexBucket := tx.Bucket(keyPostIndex)
 			for _, key := range [][]byte{
-				keyPostID,
+				keyPostAlias,
 				keyPostOwner,
 				keyPostTag,
 			} {
@@ -89,7 +89,7 @@ func (db *DB) Namespace(name string) *NS {
 			}
 			indexBucket := tx.Bucket(util.Join([]byte(name), keyPostIndex, 0))
 			for _, key := range [][]byte{
-				keyPostID,
+				keyPostAlias,
 				keyPostOwner,
 				keyPostTag,
 			} {
@@ -171,24 +171,23 @@ func (db *DB) Put(qs ...q.Query) (*post.Post, error) {
 }
 
 // Update updates the post
-func (db *DB) Update(qs ...q.Query) error {
+func (db *DB) Update(qs ...q.Query) (ok bool, err error) {
 	tx, err := db.Begin(true)
 	if err != nil {
-		return err
+		return
 	}
 	defer tx.Rollback()
 
-	err = tx.Update(qs...)
+	ok, err = tx.Update(qs...)
 	if err != nil {
-		return err
+		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return err
+		ok = false
 	}
-
-	return nil
+	return
 }
 
 // DeleteKV deletes the post kv

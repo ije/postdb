@@ -1,5 +1,14 @@
 package util
 
+import "encoding/binary"
+
+// Uint32ToBytes converts uint32 to bytes
+func Uint32ToBytes(i uint32) []byte {
+	buf := make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, i)
+	return buf
+}
+
 // ToPrefix creates a prefix bytes
 func ToPrefix(a string) []byte {
 	buf := make([]byte, 1+len(a))
@@ -13,7 +22,9 @@ func Join(a []byte, b []byte, c byte) []byte {
 	buf := make([]byte, l+1+len(b))
 	copy(buf, a)
 	buf[l] = c
-	copy(buf[l+1:], b)
+	if len(b) > 0 {
+		copy(buf[l+1:], b)
+	}
 	return buf
 }
 

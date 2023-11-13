@@ -39,8 +39,8 @@ func Alias(alias string) Query {
 }
 
 // Owner returns a owner Query
-func Owner(name string) Query {
-	return ownerQuery(name)
+func Owner(uid uint32) Query {
+	return ownerQuery(uid)
 }
 
 // Status returns a status Query

@@ -3,17 +3,15 @@ package q
 import (
 	"testing"
 
-	"github.com/ije/postdb/internal/post"
+	"github.com/rs/xid"
 )
 
 func TestQuery(t *testing.T) {
 	var res Resolver
-	id := post.NewID()
-	id2 := post.NewID()
 	for _, q := range []Query{
-		ID(id),
-		ID(id2),
-		Owner("admin"),
+		ID("id1"),
+		ID(xid.New().String()),
+		Owner(7),
 		Status(1),
 		Tags("hello", "world"),
 		Tags("world", "世界"),
@@ -25,8 +23,8 @@ func TestQuery(t *testing.T) {
 		q.Resolve(&res)
 	}
 
-	toBe(t, "IDs", len(res.IDs), 2)
-	toBe(t, "Owner", res.Owner, "admin")
+	toBe(t, "IDs", len(res.IDs), 1)
+	toBe(t, "Owner", res.Owner, uint32(7))
 	toBe(t, "Tags", len(res.Tags), 3)
 	toBe(t, "Keys", len(res.Keys), 3)
 	toBe(t, "Offset", res.Offset, uint32(2))

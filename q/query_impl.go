@@ -3,6 +3,7 @@ package q
 import (
 	"github.com/ije/postdb/internal/post"
 	"github.com/ije/postdb/internal/util"
+	"github.com/rs/xid"
 )
 
 type idQuery string
@@ -12,7 +13,10 @@ func (q idQuery) Apply(p *post.Post) {}
 
 // Resolve implements the Query interface
 func (q idQuery) Resolve(r *Resolver) {
-	r.IDs = append(r.IDs, string(q))
+	id, err := xid.FromString(string(q))
+	if err == nil {
+		r.IDs = append(r.IDs, id)
+	}
 }
 
 type idsQuery []string
@@ -22,7 +26,12 @@ func (q idsQuery) Apply(p *post.Post) {}
 
 // Resolve implements the Query interface
 func (q idsQuery) Resolve(r *Resolver) {
-	r.IDs = append(r.IDs, q...)
+	for _, id := range q {
+		id, err := xid.FromString(id)
+		if err == nil {
+			r.IDs = append(r.IDs, id)
+		}
+	}
 }
 
 type aliasQuery string
@@ -34,19 +43,19 @@ func (q aliasQuery) Apply(p *post.Post) {
 
 // Resolve implements the Query interface
 func (q aliasQuery) Resolve(r *Resolver) {
-	r.IDs = append(r.IDs, string(q))
+	r.Alias = append(r.Alias, string(q))
 }
 
-type ownerQuery string
+type ownerQuery uint32
 
 // Apply implements the Query interface
 func (q ownerQuery) Apply(p *post.Post) {
-	p.Owner = string(q)
+	p.Owner = uint32(q)
 }
 
 // Resolve implements the Query interface
 func (q ownerQuery) Resolve(r *Resolver) {
-	r.Owner = string(q)
+	r.Owner = uint32(q)
 }
 
 type statusQuery uint8

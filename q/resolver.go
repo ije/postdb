@@ -4,11 +4,12 @@ import "github.com/ije/postdb/internal/post"
 
 // Resolver to save query resolves
 type Resolver struct {
-	IDs     []string
+	IDs     [][12]byte
+	Alias   []string
 	Filters []func(post.Post) bool
 	Tags    []string
 	Keys    []string
-	Owner   string
+	Owner   uint32
 	Offset  uint32
 	Limit   uint32
 	Order   uint8

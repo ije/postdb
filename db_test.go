@@ -18,12 +18,12 @@ func TestDB(t *testing.T) {
 	defer db.Close()
 
 	// flush
-	_, err = db.Delete(q.Owner("tester"))
+	_, err = db.Delete(q.Owner(42))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	posts, err := db.List(q.Owner("tester"))
+	posts, err := db.List(q.Owner(42))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func TestDB(t *testing.T) {
 		_, err := db.Put(
 			q.Alias(fmt.Sprintf("hello-world-%d", i+1)),
 			q.Status(1),
-			q.Owner("tester"),
+			q.Owner(42),
 			q.Tags("hello", "world"),
 			q.KV{
 				"title": []byte(fmt.Sprintf("Hello World #%d", i+1)),
@@ -45,9 +45,9 @@ func TestDB(t *testing.T) {
 		}
 	}
 
-	tp, err := db.Put(
+	tmp, err := db.Put(
 		q.Alias("tmp"),
-		q.Owner("tester"),
+		q.Owner(42),
 		q.KV{
 			"title": []byte("Hello World!"),
 			"date":  []byte(time.Now().Format(http.TimeFormat)),
@@ -63,7 +63,7 @@ func TestDB(t *testing.T) {
 	}
 	toBe(t, "posts length", len(posts), 11)
 
-	_, err = db.Delete(q.ID(tp.ID))
+	_, err = db.Delete(q.ID(tmp.ID()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestDB(t *testing.T) {
 	postZh, err := db.Put(
 		q.Alias("hello-world-cn"),
 		q.Status(1),
-		q.Owner("abc"),
+		q.Owner(42),
 		q.Tags("hello", "world"),
 		q.KV{
 			"title": []byte("Hello World!"),
@@ -94,11 +94,11 @@ func TestDB(t *testing.T) {
 	}
 	toBe(t, "posts length", len(posts), 11)
 
-	err = db.Update(
-		q.ID(postZh.ID),
+	_, err = db.Update(
+		q.ID(postZh.ID()),
 		q.Alias("hello-world-zh"),
 		q.Status(2),
-		q.Owner("tester"),
+		q.Owner(42),
 		q.Tags("你好", "世界"),
 		q.KV{
 			"title":  []byte("你好世界！"),
@@ -107,7 +107,7 @@ func TestDB(t *testing.T) {
 		},
 	)
 	if err != nil {
-		t.Fatal(postZh.ID, err)
+		t.Fatal(postZh.ID(), err)
 	}
 
 	_, err = db.Get(q.Alias("hello-world-zh"))
@@ -115,13 +115,13 @@ func TestDB(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	postZh, err = db.Get(q.ID(postZh.ID), q.Select("*"))
+	postZh, err = db.Get(q.ID(postZh.ID()), q.Select("*"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	toBe(t, "postZh.Alias", postZh.Alias, "hello-world-zh")
 	toBe(t, "postZh.Status", postZh.Status, uint8(2))
-	toBe(t, "postZh.Owner", postZh.Owner, "tester")
+	toBe(t, "postZh.Owner", postZh.Owner, uint32(42))
 	toBe(t, "postZh.Tags", strings.Join(postZh.Tags, " "), "你好 世界")
 	toBe(t, "postZh.KV.title", string(postZh.KV["title"]), "你好世界！")
 	toBe(t, "postZh.KV.date", strings.HasSuffix(string(postZh.KV["date"]), ":)"), true)
@@ -139,7 +139,7 @@ func TestDB(t *testing.T) {
 	}
 	toBe(t, "posts length", len(posts), 5)
 	for _, post := range posts {
-		t.Logf(`%s/%s "%s" %s`, post.ID, post.Alias, string(post.KV["title"]), string(post.KV["date"]))
+		t.Logf(`%s(%s) "%s" %s`, post.ID(), post.Alias, string(post.KV["title"]), string(post.KV["date"]))
 	}
 
 	posts, err = db.List(q.Offset(10), q.Limit(5))
@@ -154,7 +154,7 @@ func TestDB(t *testing.T) {
 	}
 	toBe(t, "posts length", len(posts), 1)
 	for _, post := range posts {
-		t.Logf(`%s/%s "%s" %s`, post.ID, post.Alias, string(post.KV["title"]), string(post.KV["date"]))
+		t.Logf(`%s(%s) "%s" %s`, post.ID(), post.Alias, string(post.KV["title"]), string(post.KV["date"]))
 	}
 }
 

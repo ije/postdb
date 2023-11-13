@@ -8,17 +8,16 @@ import (
 func TestPostMeta(t *testing.T) {
 	post := New()
 	post.Alias = "hello-world"
-	post.Owner = "admin"
+	post.Owner = 7
 	post.Tags = []string{"hello", "world"}
 
-	metadata := post.MetaData()
+	metadata := post.Bytes()
 	_post, err := FromBytes(metadata)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	toBe(t, "_post.PKey", _post.PKey, post.PKey)
-	toBe(t, "_post.ID", _post.ID, post.ID)
 	toBe(t, "_post.Alias", _post.Alias, post.Alias)
 	toBe(t, "_post.ACL", _post.Status, post.Status)
 	toBe(t, "_post.Owner", _post.Owner, post.Owner)

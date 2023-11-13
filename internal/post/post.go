@@ -14,19 +14,18 @@ const (
 )
 
 var (
-	// ErrPostMeta specifies the error of bad post meta
-	ErrPostMeta = errors.New("bad post meta")
+	// ErrBadPostMeta specifies the error of bad post meta
+	ErrBadPostMeta = errors.New("bad post meta")
 )
 
 // A Post specifies a post of postdb.
 type Post struct {
 	PKey    [12]byte
-	ID      string
-	Alias   string
-	Status  uint8
-	Owner   string
+	Owner   uint32
 	Crtime  uint32
 	Modtime uint32
+	Status  uint8
+	Alias   string
 	Tags    []string
 	KV      map[string][]byte
 	// todo: Rank uint32
@@ -38,7 +37,6 @@ func New() *Post {
 	now := uint32(time.Now().Unix())
 	post := &Post{
 		PKey:    xid.New(),
-		ID:      NewID(),
 		Status:  1,
 		Crtime:  now,
 		Modtime: now,
@@ -52,12 +50,12 @@ func New() *Post {
 func FromBytes(data []byte) (post *Post, err error) {
 	dl := len(data)
 	if dl < 6 {
-		return nil, ErrPostMeta
+		return nil, ErrBadPostMeta
 	}
 
 	for i, c := range postMetaPrefix {
 		if data[i] != byte(c) {
-			return nil, ErrPostMeta
+			return nil, ErrBadPostMeta
 		}
 	}
 
@@ -66,7 +64,7 @@ func FromBytes(data []byte) (post *Post, err error) {
 		checksum += data[i]
 	}
 	if data[dl-1] != checksum {
-		return nil, ErrPostMeta
+		return nil, ErrBadPostMeta
 	}
 
 	version := data[4]
@@ -74,22 +72,22 @@ func FromBytes(data []byte) (post *Post, err error) {
 	case 1:
 		return decodeV1(data[5 : dl-1])
 	default:
-		return nil, ErrPostMeta
+		return nil, ErrBadPostMeta
 	}
 }
 
 func decodeV1(data []byte) (*Post, error) {
 	dl := len(data)
-	if dl < 50-6 {
-		return nil, ErrPostMeta
+	if dl < 33-6 {
+		return nil, ErrBadPostMeta
 	}
 
 	var i int
 	var pkey xid.ID
 	copy(pkey[:], data[i:i+12])
 	i += 12
-	id := string(data[i : i+20])
-	i += 20
+	owner := binary.BigEndian.Uint32(data[i : i+8])
+	i += 4
 	crtime := binary.BigEndian.Uint32(data[i : i+8])
 	i += 4
 	modtime := binary.BigEndian.Uint32(data[i : i+8])
@@ -98,26 +96,19 @@ func decodeV1(data []byte) (*Post, error) {
 	i++
 	aliasLen := int(data[i])
 	i++
-	ownerLen := int(data[i])
-	i++
 	tagN := int(data[i])
 	i++
 	if i+aliasLen > dl {
-		return nil, ErrPostMeta
+		return nil, ErrBadPostMeta
 	}
 	alias := data[i : i+aliasLen]
 	i += aliasLen
-	if i+ownerLen > dl {
-		return nil, ErrPostMeta
-	}
-	owner := data[i : i+ownerLen]
-	i += ownerLen
 	tags := make([]string, tagN)
 	for t := 0; t < tagN; t++ {
 		tl := int(data[i])
 		tEnd := i + 1 + tl
 		if tEnd > dl {
-			return nil, ErrPostMeta
+			return nil, ErrBadPostMeta
 		}
 		tags[t] = string(data[i+1 : tEnd])
 		i += 1 + tl
@@ -125,28 +116,26 @@ func decodeV1(data []byte) (*Post, error) {
 
 	return &Post{
 		PKey:    pkey,
-		ID:      id,
-		Alias:   string(alias),
-		Owner:   string(owner),
-		Status:  uint8(status),
+		Owner:   owner,
 		Crtime:  crtime,
 		Modtime: modtime,
+		Status:  uint8(status),
+		Alias:   string(alias),
 		Tags:    tags,
 		KV:      map[string][]byte{},
 	}, nil
 }
 
-// MetaData returns the meta data of post.
+// Bytes returns the bytes of the post structure.
 // data structure:
-// "POST"(4) | version(1) | pkey(12) | id(20) | crtime(4) | modtime(4)| status(1) | aliasLen(1) | ownerLen(1) | tagsN(1) | alias(aliasLen) | owner(ownerLen) | tags([1+tagLen]*tagN) | checksum(1)
-func (p *Post) MetaData() []byte {
+// "POST"(4) | version(1) | pkey(12) | owner(4) | crtime(4) | modtime(4)| status(1) | aliasLen(1) | tagsLen(1) | alias(aliasLen) | tags([1+tagLen]*N) | checksum(1)
+func (p *Post) Bytes() []byte {
 	aliasLen := len(p.Alias)
-	ownerLen := len(p.Owner)
-	metaLen := 50 + aliasLen + ownerLen
+	dataLen := 33 + aliasLen
 	for _, tag := range p.Tags {
-		metaLen += 1 + len(tag)
+		dataLen += 1 + len(tag)
 	}
-	buf := make([]byte, metaLen)
+	buf := make([]byte, dataLen)
 	i := 0
 	copy(buf, postMetaPrefix)
 	i += 4
@@ -154,8 +143,8 @@ func (p *Post) MetaData() []byte {
 	i++
 	copy(buf[i:], p.PKey[:])
 	i += 12
-	copy(buf[i:], []byte(p.ID))
-	i += 20
+	binary.BigEndian.PutUint32(buf[i:], p.Owner)
+	i += 4
 	binary.BigEndian.PutUint32(buf[i:], p.Crtime)
 	i += 4
 	binary.BigEndian.PutUint32(buf[i:], p.Modtime)
@@ -164,17 +153,11 @@ func (p *Post) MetaData() []byte {
 	i++
 	buf[i] = byte(aliasLen)
 	i++
-	buf[i] = byte(ownerLen)
-	i++
 	buf[i] = byte(len(p.Tags))
 	i++
 	if aliasLen > 0 {
 		copy(buf[i:], []byte(p.Alias))
 		i += aliasLen
-	}
-	if ownerLen > 0 {
-		copy(buf[i:], []byte(p.Owner))
-		i += ownerLen
 	}
 	for _, tag := range p.Tags {
 		tl := len(tag)
@@ -185,18 +168,21 @@ func (p *Post) MetaData() []byte {
 		i += 1 + tl
 	}
 	var checksum byte
-	for j := 0; j < metaLen-1; j++ {
+	for j := 0; j < dataLen-1; j++ {
 		checksum += buf[j]
 	}
 	buf[i] = checksum
 	return buf
 }
 
+func (p *Post) ID() string {
+	return xid.ID(p.PKey).String()
+}
+
 // Clone clones the post
 func (p *Post) Clone() *Post {
 	clone := &Post{
 		PKey:    p.PKey,
-		ID:      p.ID,
 		Alias:   p.Alias,
 		Owner:   p.Owner,
 		Status:  p.Status,
